@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Python для початківців",
+    "slug": "python-book",
+    "scheme": "python-book",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "plugins": ["expo-router"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pythonbook.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1e1b4b"
+      },
+      "package": "com.pythonbook.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
