@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Volodymyr Boiko — CV</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Georgia', serif;
+      font-size: 15px;
+      color: #222;
+      background: #f5f5f5;
+      padding: 40px 20px;
+    }
+
+    .page {
+      max-width: 780px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 56px 64px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    }
+
+    /* Header */
+    header {
+      border-bottom: 2px solid #222;
+      padding-bottom: 24px;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 32px;
+      font-weight: normal;
+      letter-spacing: 0.02em;
+    }
+
+    header h2 {
+      font-size: 15px;
+      font-weight: normal;
+      color: #555;
+      margin-top: 4px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .contact {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 24px;
+      font-family: 'Arial', sans-serif;
+      font-size: 13px;
+      color: #444;
+    }
+
+    .contact a {
+      color: #444;
+      text-decoration: none;
+    }
+
+    .contact a:hover { text-decoration: underline; }
+
+    /* Sections */
+    section { margin-bottom: 40px; }
+
+    section h3 {
+      font-size: 11px;
+      font-weight: normal;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #777;
+      margin-bottom: 20px;
+    }
+
+    /* Experience entries */
+    .entry { margin-bottom: 28px; }
+    .entry:last-child { margin-bottom: 0; }
+
+    .entry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .entry-header .role {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .entry-header .dates {
+      font-family: 'Arial', sans-serif;
+      font-size: 13px;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    .entry .company {
+      font-family: 'Arial', sans-serif;
+      font-size: 13px;
+      color: #555;
+      margin-top: 2px;
+      margin-bottom: 10px;
+    }
+
+    .entry ul {
+      padding-left: 18px;
+      list-style: disc;
+    }
+
+    .entry ul li {
+      font-family: 'Arial', sans-serif;
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .page { box-shadow: none; padding: 32px 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <header>
+      <h1>Volodymyr Boiko</h1>
+      <h2>Software Engineer</h2>
+      <div class="contact">
+        <span>pulseupbass@gmail.com</span>
+        <span>+__ ___ ___ ____</span>
+        <span>Kyiv, Ukraine</span>
+        <a href="https://linkedin.com/in/yourprofile" target="_blank">LinkedIn</a>
+        <a href="https://github.com/yourhandle" target="_blank">GitHub</a>
+      </div>
+    </header>
+
+    <section>
+      <h3>Experience</h3>
+
+      <div class="entry">
+        <div class="entry-header">
+          <span class="role">Senior Software Engineer</span>
+          <span class="dates">Jan 2023 — Present</span>
+        </div>
+        <div class="company">Company Name · Full-time · Remote</div>
+        <ul>
+          <li>Describe a key responsibility or achievement here.</li>
+          <li>Quantify impact where possible — e.g. "reduced build time by 40%."</li>
+          <li>Highlight technologies, scale, or team collaboration.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-header">
+          <span class="role">Software Engineer</span>
+          <span class="dates">Mar 2020 — Dec 2022</span>
+        </div>
+        <div class="company">Previous Company · Full-time · On-site</div>
+        <ul>
+          <li>Describe a key responsibility or achievement here.</li>
+          <li>Mention the stack, team size, or domain (e.g. fintech, e-commerce).</li>
+          <li>Add one more bullet if needed, or remove if not.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-header">
+          <span class="role">Junior Developer</span>
+          <span class="dates">Jun 2018 — Feb 2020</span>
+        </div>
+        <div class="company">Earlier Company · Full-time</div>
+        <ul>
+          <li>Describe early-career contributions.</li>
+          <li>Focus on learning, growth, and concrete deliverables.</li>
+        </ul>
+      </div>
+
+    </section>
+
+  </div>
+</body>
+</html>

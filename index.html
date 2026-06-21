@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Python для початківців 🐍</title>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+  <style>
+    :root {
+      --sidebar-bg: #1e1b4b;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --green: #10b981;
+      --green-hover: #059669;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --code-bg: #1e293b;
+      --sidebar-width: 260px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--sidebar-bg);
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+    .sidebar-header {
+      padding: 24px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-header h1 { font-size: 18px; font-weight: 700; color: #fff; line-height: 1.3; }
+    .sidebar-header p  { font-size: 12px; color: #a5b4fc; margin-top: 4px; }
+    .chapter-list { padding: 12px 0; flex: 1; }
+    .chapter-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 20px; cursor: pointer;
+      transition: background 0.15s;
+      border-left: 3px solid transparent;
+      color: #c7d2fe; font-size: 13.5px;
+    }
+    .chapter-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .chapter-item.active { background: rgba(99,102,241,0.2); border-left-color: var(--accent); color: #fff; }
+    .chapter-item .ch-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .chapter-item.active .ch-num { background: var(--accent); }
+    .chapter-item.done   .ch-num { background: var(--green); }
+    .progress-bar-wrap { padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .progress-label { font-size: 11px; color: #a5b4fc; margin-bottom: 6px; font-weight: 600; }
+    .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s; }
+
+    /* ── Loading ── */
+    .loading-overlay {
+      position: fixed; inset: 0;
+      background: rgba(30,27,75,0.95);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 100; color: white;
+    }
+    .loading-overlay.hidden { display: none; }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-overlay h2 { font-size: 20px; margin-bottom: 8px; }
+    .loading-overlay p  { font-size: 14px; color: #a5b4fc; }
+
+    /* ── Main ── */
+    .main { margin-left: var(--sidebar-width); flex: 1; min-width: 0; }
+    .chapter-page { max-width: 800px; margin: 0 auto; padding: 48px 40px; }
+
+    .chapter-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent); color: white;
+      font-size: 12px; font-weight: 600;
+      padding: 4px 12px; border-radius: 20px;
+      margin-bottom: 16px; letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .chapter-title { font-size: 32px; font-weight: 800; color: var(--text); margin-bottom: 8px; line-height: 1.2; }
+    .chapter-intro { font-size: 16px; color: var(--text-light); margin-bottom: 36px; line-height: 1.7; }
+
+    .chapter-page h3 { font-size: 20px; font-weight: 700; margin: 32px 0 12px; }
+    .chapter-page p  { color: #374151; margin-bottom: 14px; line-height: 1.75; font-size: 15px; }
+    .chapter-page ul, .chapter-page ol { margin: 0 0 16px 20px; color: #374151; font-size: 15px; line-height: 1.8; }
+
+    .box { border-radius: 10px; padding: 16px 20px; margin: 20px 0; font-size: 14.5px; line-height: 1.7; }
+    .box b { display: block; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .box-tip     { background: #f0fdf4; border-left: 4px solid #10b981; color: #065f46; }
+    .box-note    { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e40af; }
+    .box-warning { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; }
+
+    code {
+      font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+      background: #f1f5f9; padding: 1px 6px;
+      border-radius: 4px; font-size: 13px; color: #6366f1;
+    }
+
+    .code-example { background: var(--code-bg); border-radius: 10px; overflow: hidden; margin: 20px 0; }
+    .code-example-header {
+      background: rgba(255,255,255,0.05); padding: 8px 16px;
+      font-size: 12px; color: #94a3b8;
+      font-family: 'SF Mono', monospace;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .code-example pre {
+      padding: 16px;
+      font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+      font-size: 14px; color: #e2e8f0;
+      overflow-x: auto; line-height: 1.6; white-space: pre;
+    }
+    .kw { color: #c792ea; } .str { color: #c3e88d; } .num { color: #f78c6c; }
+    .fn { color: #82aaff; } .cm { color: #546e7a; font-style: italic; } .op { color: #89ddff; }
+
+    .concept-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    .concept-table th {
+      background: #f1f5f9; padding: 10px 14px; text-align: left;
+      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;
+    }
+    .concept-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-family: 'SF Mono', monospace; font-size: 13px; }
+    .concept-table tr:last-child td { border-bottom: none; }
+    .concept-table tr:nth-child(even) td { background: #f8fafc; }
+
+    .divider { border: none; border-top: 2px dashed var(--border); margin: 40px 0; }
+
+    /* ── Playground ── */
+    .playground {
+      background: var(--surface); border: 2px solid var(--border);
+      border-radius: 14px; overflow: hidden; margin: 32px 0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .playground-header {
+      background: var(--code-bg); padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .playground-header span {
+      color: #94a3b8; font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .playground-header span::before {
+      content: ''; display: inline-block;
+      width: 10px; height: 10px; background: #10b981; border-radius: 50%;
+    }
+    .playground-actions { display: flex; gap: 8px; }
+    .btn { padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+    .btn-run { background: var(--green); color: white; }
+    .btn-run:hover { background: var(--green-hover); }
+    .btn-run:disabled { background: #94a3b8; cursor: not-allowed; }
+    .btn-reset { background: rgba(255,255,255,0.1); color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); }
+    .btn-reset:hover { background: rgba(255,255,255,0.18); color: #e2e8f0; }
+
+    .code-editor {
+      width: 100%; min-height: 140px;
+      font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+      font-size: 14px; line-height: 1.6; padding: 16px;
+      background: #0f172a; color: #e2e8f0;
+      border: none; resize: vertical; outline: none; display: block; tab-size: 4;
+    }
+    .output-area { border-top: 1px solid rgba(255,255,255,0.08); background: #0a0f1e; min-height: 48px; }
+    .output-label {
+      padding: 8px 16px; font-size: 11px; color: #475569;
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .output-text {
+      padding: 12px 16px;
+      font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+      font-size: 13.5px; color: #a3e635;
+      white-space: pre-wrap; min-height: 40px; line-height: 1.6;
+    }
+    .output-text.error   { color: #f87171; }
+    .output-text.waiting { color: #64748b; font-style: italic; }
+
+    /* ── Nav ── */
+    .chapter-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 48px; padding-top: 32px; border-top: 2px solid var(--border);
+    }
+    .btn-nav {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600;
+      cursor: pointer; border: 2px solid var(--border);
+      background: var(--surface); color: var(--text);
+      transition: all 0.15s;
+    }
+    .btn-nav:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-nav.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .btn-nav.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-nav.invisible { opacity: 0; pointer-events: none; }
+
+    .finish-banner {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 16px; padding: 40px; text-align: center;
+      color: white; margin-top: 32px;
+    }
+    .finish-banner .trophy { font-size: 56px; display: block; margin-bottom: 16px; }
+    .finish-banner h2 { font-size: 28px; margin-bottom: 8px; }
+    .finish-banner p { font-size: 16px; opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <h2>Завантаження Python... 🐍</h2>
+  <p>Налаштовуємо середовище для програмування, зачекайте</p>
+</div>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>🐍 Python для<br>початківців</h1>
+    <p>Видання для 7 класу</p>
+  </div>
+  <nav class="chapter-list" id="chapterList"></nav>
+  <div class="progress-bar-wrap">
+    <div class="progress-label" id="progressLabel">Розділ 1 з 10</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:10%"></div></div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="chapter-page" id="chapterPage"></div>
+</main>
+
+<script>
+// ── Дані розділів ─────────────────────────────────────────────────────────────
+
+const chapters = [
+  {
+    id: 1, emoji: "👋", title: "Привіт, Python!",
+    intro: "Ласкаво просимо! Дізнаємось, що таке Python, і напишемо твою першу програму.",
+    content: `
+      <h3>Що таке програмування?</h3>
+      <p><strong>Програма</strong> — це список інструкцій для комп'ютера. Комп'ютер виконує їх точно, одну за одною. Програмування — це просто написання цих інструкцій мовою, яку розуміє комп'ютер.</p>
+      <h3>Що таке Python?</h3>
+      <p>Python — одна з таких мов. Вона була створена у 1991 році і зараз використовується вченими, розробниками ігор, веб-інженерами — навіть NASA використовує Python!</p>
+      <div class="box box-tip"><b>🐍 Чому Python?</b>Python читається майже як звичайна мова. Замість складних символів ти пишеш зрозумілі, прості інструкції — ідеально для початківців.</div>
+      <h3>print() — твоя перша команда</h3>
+      <p><code>print()</code> наказує Python відобразити текст на екрані. Помісти текст у дужки, обгорнувши лапками.</p>
+      <div class="code-example"><div class="code-example-header">python · приклад</div><pre><span class="fn">print</span>(<span class="str">"Привіт, Світе!"</span>)
+<span class="fn">print</span>(<span class="str">"Я вчусь Python!"</span>)</pre></div>
+      <div class="box box-note"><b>📝 Лапки</b>Текст усередині print() завжди має бути в лапках — одинарні <code>'привіт'</code> або подвійні <code>"привіт"</code> — обидва варіанти працюють.</div>
+      <h3>Спробуй сам!</h3>
+      <p>Редагуй код нижче і натисни <strong>Запустити</strong>, щоб побачити результат. Спробуй додати більше рядків <code>print()</code>!</p>
+    `,
+    initialCode: `print("Привіт, Світе!")
+print("Мене звати Python!")
+print("Я вчусь програмувати! 🚀")`
+  },
+  {
+    id: 2, emoji: "📦", title: "Змінні",
+    intro: "Змінні — це підписані коробки для зберігання інформації. Можна класти в них речі, читати та змінювати їх.",
+    content: `
+      <h3>Що таке змінна?</h3>
+      <p>Уяви коробку з підписом «вік» і числом 13 всередині. Коли тобі потрібен твій вік — просто заглянь у коробку «вік». Це і є змінна.</p>
+      <div class="code-example"><div class="code-example-header">python · створення змінних</div><pre>name = <span class="str">"Олексій"</span>
+age  = <span class="num">13</span>
+city = <span class="str">"Київ"</span>
+
+<span class="fn">print</span>(name)
+<span class="fn">print</span>(age)</pre></div>
+      <h3>Правила іменування</h3>
+      <ul>
+        <li>Лише літери, цифри та підкреслення</li>
+        <li>Не може <em>починатись</em> з цифри</li>
+        <li>Без пробілів — використовуй <code>my_name</code>, а не <code>my name</code></li>
+        <li>Регістр важливий: <code>Name</code> ≠ <code>name</code></li>
+      </ul>
+      <div class="box box-warning"><b>⚠️ Недійсні імена</b><code>2cool</code>, <code>my name</code>, <code>class</code> (зарезервоване слово) — усі вони викликають помилки.</div>
+      <h3>Поширені типи</h3>
+      <table class="concept-table">
+        <tr><th>Тип</th><th>Приклад</th><th>Зберігає</th></tr>
+        <tr><td>str</td><td>name = "Аліса"</td><td>Текст</td></tr>
+        <tr><td>int</td><td>age = 13</td><td>Цілі числа</td></tr>
+        <tr><td>float</td><td>height = 1.65</td><td>Десяткові числа</td></tr>
+        <tr><td>bool</td><td>happy = True</td><td>True або False</td></tr>
+      </table>
+      <div class="box box-tip"><b>💡 Змінні можуть змінюватись!</b>Саме тому вони називаються <em>змінними</em>. <code>score = 0</code> а потім <code>score = 10</code> — абсолютно нормально.</div>
+    `,
+    initialCode: `# Заповни своїми даними!
+name    = "Твоє Ім'я"
+age     = 13
+grade   = 7
+subject = "Математика"
+
+print("Ім'я:", name)
+print("Вік:", age)
+print("Клас:", grade)
+print("Улюблений предмет:", subject)
+
+# Змінні можуть змінюватись
+score = 0
+print("Рахунок:", score)
+score = 100
+print("Новий рахунок:", score)`
+  },
+  {
+    id: 3, emoji: "🔢", title: "Числа та математика",
+    intro: "Python — це потужний калькулятор. Давай дослідимо арифметику і побачимо, які трюки ховаються у числах.",
+    content: `
+      <h3>Два види чисел</h3>
+      <p><strong>int</strong> — цілі числа: <code>5</code>, <code>-3</code>, <code>1000</code><br>
+      <strong>float</strong> — десяткові числа: <code>3.14</code>, <code>-0.5</code>, <code>2.0</code></p>
+      <h3>Оператори</h3>
+      <table class="concept-table">
+        <tr><th>Символ</th><th>Операція</th><th>Приклад</th><th>Результат</th></tr>
+        <tr><td>+</td><td>Додавання</td><td>10 + 3</td><td>13</td></tr>
+        <tr><td>-</td><td>Віднімання</td><td>10 - 3</td><td>7</td></tr>
+        <tr><td>*</td><td>Множення</td><td>10 * 3</td><td>30</td></tr>
+        <tr><td>/</td><td>Ділення</td><td>10 / 3</td><td>3.333…</td></tr>
+        <tr><td>//</td><td>Цілочисельне ділення</td><td>10 // 3</td><td>3</td></tr>
+        <tr><td>%</td><td>Остача від ділення</td><td>10 % 3</td><td>1</td></tr>
+        <tr><td>**</td><td>Степінь</td><td>2 ** 8</td><td>256</td></tr>
+      </table>
+      <div class="box box-tip"><b>💡 % (модуло)</b><code>10 % 3 = 1</code> — залишок після ділення. Чудово підходить для перевірки парності: <code>n % 2 == 0</code>.</div>
+      <h3>Порядок операцій</h3>
+      <p>Python дотримується тих самих правил, що й у шкільній математиці: дужки, степені, множення/ділення, додавання/віднімання.</p>
+      <div class="code-example"><div class="code-example-header">python · порядок важливий</div><pre><span class="fn">print</span>(<span class="num">2</span> + <span class="num">3</span> * <span class="num">4</span>)      <span class="cm"># 14, а не 20</span>
+<span class="fn">print</span>((<span class="num">2</span> + <span class="num">3</span>) * <span class="num">4</span>)    <span class="cm"># 20</span>
+<span class="fn">print</span>(<span class="num">2</span> ** <span class="num">10</span>)          <span class="cm"># 1024</span></pre></div>
+    `,
+    initialCode: `a = 25
+b = 7
+
+print("Додавання:", a + b)
+print("Віднімання:", a - b)
+print("Множення:", a * b)
+print("Ділення:", a / b)
+print("Цілочисельне ділення:", a // b)
+print("Остача:", a % b)
+print("a у квадраті:", a ** 2)
+
+# Корисні вбудовані функції
+print("макс:", max(a, b))
+print("мін:", min(a, b))
+print("модуль -99:", abs(-99))
+print("округлення 3.7:", round(3.7))
+
+# Перевірка парності
+n = 42
+print(n, "є парним:", n % 2 == 0)`
+  },
+  {
+    id: 4, emoji: "💬", title: "Рядки (текст)",
+    intro: "Рядки — це спосіб зберігати текст у Python. Їх можна створювати, об'єднувати, шукати в них і перетворювати.",
+    content: `
+      <h3>Створення рядків</h3>
+      <p>Будь-який текст у лапках є рядком. Можна використовувати одинарні або подвійні лапки — на вибір.</p>
+      <div class="code-example"><div class="code-example-header">python · рядки</div><pre>greeting = <span class="str">"Привіт!"</span>
+name     = <span class="str">'Python'</span>
+fun      = <span class="str">"Я люблю програмувати 🎉"</span></pre></div>
+      <h3>Об'єднання рядків</h3>
+      <p>З'єднуй рядки за допомогою <code>+</code> (конкатенація) або використовуй <strong>f-рядок</strong>, щоб вставляти змінні прямо в текст.</p>
+      <div class="code-example"><div class="code-example-header">python · f-рядки (сучасний спосіб)</div><pre>name = <span class="str">"Олексій"</span>
+age  = <span class="num">13</span>
+<span class="fn">print</span>(<span class="str">f"Мене звати <span class="op">{name}</span>, мені <span class="op">{age}</span> років."</span>)</pre></div>
+      <h3>Корисні методи рядків</h3>
+      <table class="concept-table">
+        <tr><th>Метод</th><th>Що робить</th><th>Приклад → Результат</th></tr>
+        <tr><td>len(s)</td><td>Кількість символів</td><td>len("привіт") → 6</td></tr>
+        <tr><td>s.upper()</td><td>ВСІ ВЕЛИКІ</td><td>"hi".upper() → "HI"</td></tr>
+        <tr><td>s.lower()</td><td>всі малі</td><td>"HI".lower() → "hi"</td></tr>
+        <tr><td>s.replace(a,b)</td><td>Замінює текст</td><td>"кіт".replace("кіт","пес") → "пес"</td></tr>
+        <tr><td>s.count(x)</td><td>Рахує входження</td><td>"банан".count("а") → 3</td></tr>
+        <tr><td>s.strip()</td><td>Прибирає пробіли з країв</td><td>"  хай  ".strip() → "хай"</td></tr>
+      </table>
+      <div class="box box-tip"><b>💡 Повторення рядка</b><code>"га" * 3</code> → <code>"гагага"</code></div>
+    `,
+    initialCode: `name = "Учень Python"
+sentence = "я люблю програмувати"
+
+print("Довжина:", len(name))
+print("Великі літери:", name.upper())
+print("Малі літери:", sentence.lower())
+print("Заміна:", sentence.replace("програмувати", "Python"))
+
+# f-рядок
+age = 13
+print(f"Привіт! Я {name}, мені {age} років.")
+
+# Повторення рядка
+print("Python! " * 3)
+
+# Підрахунок голосних
+word = "програмування"
+vowels = 0
+for ch in word:
+    if ch in "аеєиіїоуюя":
+        vowels += 1
+print(f"У слові '{word}' є {vowels} голосних")`
+  },
+  {
+    id: 5, emoji: "⌨️", title: "Введення даних",
+    intro: "Програми стають інтерактивними, коли можуть ставити запитання. input() зупиняє програму і чекає, доки користувач щось надрукує.",
+    content: `
+      <h3>Функція input()</h3>
+      <p><code>input()</code> показує підказку і чекає, доки користувач щось введе. Вона завжди повертає <strong>рядок</strong>.</p>
+      <div class="code-example"><div class="code-example-header">python · базове введення</div><pre>name = <span class="fn">input</span>(<span class="str">"Як тебе звати? "</span>)
+<span class="fn">print</span>(<span class="str">f"Привіт, <span class="op">{name}</span>!"</span>)</pre></div>
+      <div class="box box-warning"><b>⚠️ Завжди рядок!</b>Навіть якщо користувач введе <code>13</code>, input() поверне <code>"13"</code> (текст). Щоб виконувати математику — потрібно перетворити тип.</div>
+      <h3>Перетворення типів</h3>
+      <div class="code-example"><div class="code-example-header">python · перетворення типів</div><pre>age = <span class="fn">int</span>(<span class="fn">input</span>(<span class="str">"Твій вік: "</span>))
+<span class="fn">print</span>(<span class="str">f"Наступного року тобі буде <span class="op">{age + 1}</span>!"</span>)
+
+price  = <span class="fn">float</span>(<span class="fn">input</span>(<span class="str">"Ціна: "</span>))
+number = <span class="fn">str</span>(<span class="num">42</span>)   <span class="cm"># число → текст</span></pre></div>
+      <div class="box box-note"><b>📝 У цьому майданчику</b>Коли твій код викликає input(), з'явиться спливаюче вікно. Введи відповідь і натисни OK.</div>
+    `,
+    initialCode: `# Програма вітання
+name = input("Як тебе звати? ")
+print(f"Привіт, {name}! Радий познайомитись! 👋")
+
+# Простий калькулятор
+num1 = float(input("Введи перше число: "))
+num2 = float(input("Введи друге число: "))
+print(f"{num1} + {num2} = {num1 + num2}")
+print(f"{num1} * {num2} = {num1 * num2}")`
+  },
+  {
+    id: 6, emoji: "🤔", title: "Прийняття рішень",
+    intro: "Програми мають обирати, що робити — так само як і ти щодня! if/elif/else дозволяє Python приймати рішення на основі умов.",
+    content: `
+      <h3>Оператори порівняння</h3>
+      <table class="concept-table">
+        <tr><th>Оператор</th><th>Значення</th><th>Приклад</th><th>Результат</th></tr>
+        <tr><td>==</td><td>Рівне</td><td>5 == 5</td><td>True</td></tr>
+        <tr><td>!=</td><td>Не рівне</td><td>5 != 3</td><td>True</td></tr>
+        <tr><td>&gt;</td><td>Більше</td><td>7 &gt; 3</td><td>True</td></tr>
+        <tr><td>&lt;</td><td>Менше</td><td>7 &lt; 3</td><td>False</td></tr>
+        <tr><td>&gt;=</td><td>Більше або рівне</td><td>5 &gt;= 5</td><td>True</td></tr>
+        <tr><td>&lt;=</td><td>Менше або рівне</td><td>4 &lt;= 3</td><td>False</td></tr>
+      </table>
+      <h3>if / elif / else</h3>
+      <div class="code-example"><div class="code-example-header">python · умовний оператор</div><pre>temp = <span class="num">28</span>
+
+<span class="kw">if</span> temp > <span class="num">30</span>:
+    <span class="fn">print</span>(<span class="str">"Спекотно! 🌞"</span>)
+<span class="kw">elif</span> temp > <span class="num">20</span>:
+    <span class="fn">print</span>(<span class="str">"Тепло 😊"</span>)
+<span class="kw">elif</span> temp > <span class="num">10</span>:
+    <span class="fn">print</span>(<span class="str">"Прохолодно 🧥"</span>)
+<span class="kw">else</span>:
+    <span class="fn">print</span>(<span class="str">"Холодно ❄️"</span>)</pre></div>
+      <div class="box box-warning"><b>⚠️ Відступи обов'язкові!</b>Код усередині блоку if має бути з відступом (4 пробіли). Python використовує відступи замість дужок.</div>
+      <h3>and / or / not</h3>
+      <div class="code-example"><div class="code-example-header">python · комбінування умов</div><pre>age = <span class="num">15</span>
+has_ticket = <span class="kw">True</span>
+
+<span class="kw">if</span> age >= <span class="num">13</span> <span class="kw">and</span> has_ticket:
+    <span class="fn">print</span>(<span class="str">"Ласкаво просимо! 🎭"</span>)
+<span class="kw">else</span>:
+    <span class="fn">print</span>(<span class="str">"Вибачте."</span>)</pre></div>
+    `,
+    initialCode: `# Калькулятор оцінок — змінюй бал!
+score = 85
+
+if score >= 90:
+    grade, comment = "A", "Відмінно! 🌟"
+elif score >= 80:
+    grade, comment = "B", "Чудова робота! 👍"
+elif score >= 70:
+    grade, comment = "C", "Добре! 😊"
+elif score >= 60:
+    grade, comment = "D", "Продовжуй старатись! 💪"
+else:
+    grade, comment = "F", "Не здавайся! 🔄"
+
+print(f"Бал:      {score}")
+print(f"Оцінка:   {grade}")
+print(f"Коментар: {comment}")
+
+# Комбінування умов
+age = 14
+is_member = True
+if age >= 13 and is_member:
+    print("\\nДоступ до підліткового клубу відкрито! 🎉")`
+  },
+  {
+    id: 7, emoji: "🔁", title: "Цикли",
+    intro: "Цикли дозволяють Python повторювати дії багато разів без копіювання коду. Це одна з найпотужніших ідей у програмуванні!",
+    content: `
+      <h3>Цикл for</h3>
+      <p>Повторює код задану кількість разів за допомогою <code>range()</code>.</p>
+      <div class="code-example"><div class="code-example-header">python · цикл for</div><pre><span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">5</span>):
+    <span class="fn">print</span>(<span class="str">f"Крок <span class="op">{i}</span>"</span>)
+<span class="cm"># range(5)      → 0 1 2 3 4</span>
+<span class="cm"># range(1, 6)   → 1 2 3 4 5</span>
+<span class="cm"># range(0,10,2) → 0 2 4 6 8</span></pre></div>
+      <h3>Цикл while</h3>
+      <p>Продовжує повторювати, доки умова є True.</p>
+      <div class="code-example"><div class="code-example-header">python · цикл while</div><pre>count = <span class="num">1</span>
+<span class="kw">while</span> count <= <span class="num">5</span>:
+    <span class="fn">print</span>(count)
+    count += <span class="num">1</span>   <span class="cm"># те саме що count = count + 1</span></pre></div>
+      <div class="box box-warning"><b>⚠️ Нескінченні цикли</b>Якщо умова while ніколи не стає False, цикл крутиться вічно. Завжди змінюй щось усередині циклу!</div>
+      <h3>break і continue</h3>
+      <div class="code-example"><div class="code-example-header">python · break &amp; continue</div><pre><span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">10</span>):
+    <span class="kw">if</span> i == <span class="num">3</span>: <span class="kw">continue</span>  <span class="cm"># пропускаємо 3</span>
+    <span class="kw">if</span> i == <span class="num">7</span>: <span class="kw">break</span>     <span class="cm"># зупиняємось на 7</span>
+    <span class="fn">print</span>(i)</pre></div>
+    `,
+    initialCode: `# Таблиця множення
+print("=== Таблиця множення на 7 ===")
+for i in range(1, 11):
+    print(f"7 × {i:2d} = {7 * i}")
+
+print()
+
+# Сума від 1 до 100
+total = 0
+for n in range(1, 101):
+    total += n
+print(f"Сума від 1 до 100 = {total}")
+
+print()
+
+# Парні числа в один рядок
+print("Парні числа від 2 до 20:")
+for n in range(2, 21, 2):
+    print(n, end=" ")
+print()  # новий рядок
+
+# Зворотній відлік
+print("\\nВідлік:")
+count = 5
+while count > 0:
+    print(count, end=" ")
+    count -= 1
+print("🚀 Старт!")`
+  },
+  {
+    id: 8, emoji: "📋", title: "Списки",
+    intro: "Списки зберігають багато елементів в одній змінній — як список покупок або плейлист. Їх можна доповнювати, видаляти з них і перебирати.",
+    content: `
+      <h3>Створення списку</h3>
+      <div class="code-example"><div class="code-example-header">python · списки</div><pre>fruits  = [<span class="str">"яблуко"</span>, <span class="str">"банан"</span>, <span class="str">"вишня"</span>]
+numbers = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+mixed   = [<span class="str">"Аліса"</span>, <span class="num">13</span>, <span class="kw">True</span>]   <span class="cm"># різні типи — нормально</span></pre></div>
+      <h3>Індексація — Python рахує з 0!</h3>
+      <div class="code-example"><div class="code-example-header">python · індексація</div><pre>fruits = [<span class="str">"яблуко"</span>, <span class="str">"банан"</span>, <span class="str">"вишня"</span>]
+<span class="cm">#          [0]        [1]      [2]</span>
+<span class="fn">print</span>(fruits[<span class="num">0</span>])    <span class="cm"># яблуко</span>
+<span class="fn">print</span>(fruits[-<span class="num">1</span>])   <span class="cm"># вишня (останній елемент)</span></pre></div>
+      <h3>Методи списків</h3>
+      <table class="concept-table">
+        <tr><th>Метод</th><th>Що робить</th></tr>
+        <tr><td>list.append(x)</td><td>Додає в кінець</td></tr>
+        <tr><td>list.remove(x)</td><td>Видаляє перший збіг</td></tr>
+        <tr><td>list.pop()</td><td>Видаляє і повертає останній елемент</td></tr>
+        <tr><td>list.sort()</td><td>Сортує список</td></tr>
+        <tr><td>list.reverse()</td><td>Перевертає порядок</td></tr>
+        <tr><td>len(list)</td><td>Кількість елементів</td></tr>
+        <tr><td>x in list</td><td>True, якщо x існує</td></tr>
+      </table>
+    `,
+    initialCode: `tasks = ["Зробити домашнє завдання", "Погодувати кота", "Вчити Python"]
+
+print("Мої завдання:")
+for i, task in enumerate(tasks, 1):
+    print(f"  {i}. {task}")
+
+# Змінюємо список
+tasks.append("Почитати книгу")
+tasks.remove("Погодувати кота")
+
+print(f"\\nОновлено ({len(tasks)} завдання):")
+for task in tasks:
+    print(f"  - {task}")
+
+# Перевірка наявності
+print("\\n'Зробити домашнє завдання' у списку?", "Зробити домашнє завдання" in tasks)
+
+# Сортування чисел
+scores = [85, 92, 67, 78, 95, 88]
+scores.sort()
+print(f"\\nВідсортовані бали: {scores}")
+print(f"Найкращий: {scores[-1]}  Найгірший: {scores[0]}")
+print(f"Середній: {sum(scores) / len(scores):.1f}")`
+  },
+  {
+    id: 9, emoji: "🛠️", title: "Функції",
+    intro: "Функції дозволяють назвати блок коду і використовувати його повторно. Пишеш один раз — викликаєш багато разів.",
+    content: `
+      <h3>Визначення функції</h3>
+      <div class="code-example"><div class="code-example-header">python · def</div><pre><span class="kw">def</span> <span class="fn">say_hello</span>():
+    <span class="fn">print</span>(<span class="str">"Привіт!"</span>)
+    <span class="fn">print</span>(<span class="str">"Як справи?"</span>)
+
+<span class="fn">say_hello</span>()   <span class="cm"># виклик</span>
+<span class="fn">say_hello</span>()   <span class="cm"># ще один виклик!</span></pre></div>
+      <h3>Параметри (вхідні дані)</h3>
+      <div class="code-example"><div class="code-example-header">python · параметри</div><pre><span class="kw">def</span> <span class="fn">greet</span>(name, age):
+    <span class="fn">print</span>(<span class="str">f"Привіт {name}! Тобі {age} років."</span>)
+
+<span class="fn">greet</span>(<span class="str">"Аліса"</span>, <span class="num">13</span>)
+<span class="fn">greet</span>(<span class="str">"Боб"</span>,   <span class="num">14</span>)</pre></div>
+      <h3>Значення, що повертаються</h3>
+      <div class="code-example"><div class="code-example-header">python · return</div><pre><span class="kw">def</span> <span class="fn">add</span>(a, b):
+    <span class="kw">return</span> a + b
+
+result = <span class="fn">add</span>(<span class="num">10</span>, <span class="num">5</span>)
+<span class="fn">print</span>(result)         <span class="cm"># 15</span>
+<span class="fn">print</span>(<span class="fn">add</span>(<span class="num">3</span>, <span class="num">7</span>))      <span class="cm"># 10</span></pre></div>
+      <div class="box box-tip"><b>💡 Параметри за замовчуванням</b><code>def greet(name, msg="Привіт"):</code> — якщо не передати msg, буде використано "Привіт".</div>
+    `,
+    initialCode: `def greet(name, greeting="Привіт"):
+    print(f"{greeting}, {name}! 👋")
+
+def area(length, width):
+    return length * width
+
+def is_even(n):
+    return n % 2 == 0
+
+def biggest(a, b, c):
+    if a >= b and a >= c:
+        return a
+    elif b >= c:
+        return b
+    return c
+
+# Викликаємо функції
+greet("Олексій")
+greet("Марія", "Вітаю")
+
+print(f"Площа 5×8 = {area(5, 8)} кв. метрів")
+
+print("\\nПарні числа до 10:")
+for n in range(1, 11):
+    if is_even(n):
+        print(n, end=" ")
+print()
+
+print(f"\\nНайбільше з 7, 12, 9 = {biggest(7, 12, 9)}")`
+  },
+  {
+    id: 10, emoji: "🎮", title: "Міні-проєкт: Гра «Вгадай число»",
+    intro: "Час зібрати все разом! Побудуємо гру «Вгадай число», використовуючи всі концепції, які ти вивчив.",
+    content: `
+      <h3>Що ми будуємо</h3>
+      <p>Комп'ютер загадує секретне число від 1 до 100. Ти його вгадуєш. Після кожної спроби він каже «замало», «забагато» або «правильно!». У тебе є 7 спроб.</p>
+      <h3>Нова ідея: import</h3>
+      <p>Python постачається з <strong>модулями</strong> — колекціями додаткових інструментів. Нам потрібен модуль <code>random</code>, щоб вибрати випадкове число.</p>
+      <div class="code-example"><div class="code-example-header">python · модуль random</div><pre><span class="kw">import</span> random
+
+secret = random.randint(<span class="num">1</span>, <span class="num">100</span>)
+<span class="fn">print</span>(secret)   <span class="cm"># різне кожного разу!</span></pre></div>
+      <h3>Повна гра</h3>
+      <p>Уважно прочитай код у майданчику — знайди змінні, цикл, if/elif/else і виклик input() з кожного розділу!</p>
+      <div class="box box-tip"><b>🏆 Ідеї для покращення після проходження!</b><ul style="margin:8px 0 0 16px"><li>Відстежуй рахунок по кількох раундах</li><li>Показуй підказки «дуже близько!» або «далеко!» залежно від різниці</li><li>Дай гравцю обрати складність (легко = 20 спроб, важко = 5)</li></ul></div>
+      <div class="box box-note"><b>🎓 Ти закінчив книгу!</b>Тепер ти знаєш основи: змінні, рядки, числа, введення, умови, цикли, списки та функції. Продовжуй будувати проєкти — так навчаються справжні програмісти!</div>
+    `,
+    initialCode: `import random
+
+secret = random.randint(1, 100)
+attempts = 0
+max_tries = 7
+
+print("🎮 Гра: Вгадай число")
+print(f"Я загадав число від 1 до 100.")
+print(f"У тебе є {max_tries} спроб. Удачі!\\n")
+
+while attempts < max_tries:
+    guess = int(input(f"Спроба #{attempts + 1}: "))
+    attempts += 1
+    remaining = max_tries - attempts
+
+    if guess < secret:
+        print(f"📉 Замало! Спробуй більше. ({remaining} спроб залишилось)")
+    elif guess > secret:
+        print(f"📈 Забагато! Спробуй менше. ({remaining} спроб залишилось)")
+    else:
+        print(f"\\n🎉 Правильно! Ти вгадав за {attempts} спроб(и)!")
+        break
+else:
+    print(f"\\n😢 Спроби закінчились! Загадане число було {secret}.")`
+  }
+];
+
+// ── Стан ─────────────────────────────────────────────────────────────────────
+
+let currentChapter = 0;
+let pyodide        = null;
+let pyodideReady   = false;
+const done         = new Set();
+
+// ── Pyodide ──────────────────────────────────────────────────────────────────
+
+async function initPyodide() {
+  try {
+    pyodide = await loadPyodide();
+    await pyodide.runPythonAsync(`
+import builtins, js
+builtins.input = lambda prompt='': js.prompt(str(prompt)) or ''
+`);
+    pyodideReady = true;
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    const btn = document.getElementById('runBtn');
+    if (btn) { btn.disabled = false; btn.textContent = '▶ Запустити'; }
+  } catch (e) {
+    document.getElementById('loadingOverlay').innerHTML = `
+      <div style="text-align:center;padding:32px">
+        <div style="font-size:48px;margin-bottom:16px">❌</div>
+        <h2>Не вдалося завантажити Python</h2>
+        <p style="color:#a5b4fc;margin-top:8px">Будь ласка, оновіть сторінку і спробуйте знову.</p>
+      </div>`;
+  }
+}
+
+// ── Рендер бічної панелі ──────────────────────────────────────────────────────
+
+function renderSidebar() {
+  document.getElementById('chapterList').innerHTML = chapters.map((ch, i) => `
+    <div class="chapter-item ${i === currentChapter ? 'active' : ''} ${done.has(i) && i !== currentChapter ? 'done' : ''}"
+         onclick="goTo(${i})">
+      <div class="ch-num">${done.has(i) && i !== currentChapter ? '✓' : ch.id}</div>
+      <span>${ch.emoji} ${ch.title}</span>
+    </div>`).join('');
+
+  const pct = Math.round(((currentChapter + 1) / chapters.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent =
+    `Розділ ${currentChapter + 1} з ${chapters.length}`;
+}
+
+// ── Рендер розділу ────────────────────────────────────────────────────────────
+
+function renderChapter(idx) {
+  const ch      = chapters[idx];
+  const isFirst = idx === 0;
+  const isLast  = idx === chapters.length - 1;
+
+  document.getElementById('chapterPage').innerHTML = `
+    <div class="chapter-badge">Розділ ${ch.id} з ${chapters.length}</div>
+    <h1 class="chapter-title">${ch.emoji} ${ch.title}</h1>
+    <p class="chapter-intro">${ch.intro}</p>
+
+    ${ch.content}
+
+    <hr class="divider">
+
+    <div class="playground">
+      <div class="playground-header">
+        <span>Python Майданчик</span>
+        <div class="playground-actions">
+          <button class="btn btn-reset" onclick="resetCode()">Скинути</button>
+          <button class="btn btn-run" id="runBtn" onclick="runCode()" ${pyodideReady ? '' : 'disabled'}>
+            ${pyodideReady ? '▶ Запустити' : '⏳ Завантаження...'}
+          </button>
+        </div>
+      </div>
+      <textarea class="code-editor" id="codeEditor" spellcheck="false">${ch.initialCode}</textarea>
+      <div class="output-area">
+        <div class="output-label">Результат</div>
+        <div class="output-text waiting" id="outputText">Натисни Ctrl+Enter або кнопку Запустити…</div>
+      </div>
+    </div>
+
+    <div class="chapter-nav">
+      <button class="btn-nav ${isFirst ? 'invisible' : ''}" onclick="goTo(${idx - 1})">← Назад</button>
+      <button class="btn-nav primary" onclick="advance(${idx})">${isLast ? '🏆 Завершити' : 'Далі →'}</button>
+    </div>
+  `;
+
+  document.getElementById('codeEditor').addEventListener('keydown', e => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const ta = e.target, s = ta.selectionStart;
+      ta.value = ta.value.slice(0, s) + '    ' + ta.value.slice(ta.selectionEnd);
+      ta.selectionStart = ta.selectionEnd = s + 4;
+    }
+  });
+
+  window.scrollTo(0, 0);
+}
+
+// ── Навігація ─────────────────────────────────────────────────────────────────
+
+function goTo(idx) {
+  currentChapter = idx;
+  renderSidebar();
+  renderChapter(idx);
+}
+
+function advance(idx) {
+  done.add(idx);
+  if (idx < chapters.length - 1) {
+    goTo(idx + 1);
+  } else {
+    renderSidebar();
+    document.getElementById('chapterPage').insertAdjacentHTML('beforeend', `
+      <div class="finish-banner">
+        <span class="trophy">🏆</span>
+        <h2>Ти дочитав книгу!</h2>
+        <p>Ти опанував основи Python. Продовжуй будувати проєкти — саме так ростуть справжні програмісти.</p>
+      </div>`);
+  }
+}
+
+// ── Виконання коду ────────────────────────────────────────────────────────────
+
+async function runCode() {
+  if (!pyodideReady) return;
+  const code   = document.getElementById('codeEditor').value;
+  const out    = document.getElementById('outputText');
+  const runBtn = document.getElementById('runBtn');
+
+  out.className = 'output-text waiting';
+  out.textContent = 'Виконується…';
+  runBtn.disabled = true;
+  runBtn.textContent = '⏳';
+
+  try {
+    await pyodide.runPythonAsync(`
+import sys, io as _io
+sys.stdout = _io.StringIO()
+sys.stderr = _io.StringIO()
+`);
+    await pyodide.runPythonAsync(code);
+    const stdout = pyodide.runPython('sys.stdout.getvalue()');
+    const stderr = pyodide.runPython('sys.stderr.getvalue()');
+    out.className = 'output-text';
+    out.textContent = (stdout + stderr).trim() || '(немає виводу)';
+  } catch (err) {
+    out.className = 'output-text error';
+    out.textContent = '🔴 ' + err.message;
+  } finally {
+    runBtn.disabled = false;
+    runBtn.textContent = '▶ Запустити';
+  }
+}
+
+function resetCode() {
+  document.getElementById('codeEditor').value = chapters[currentChapter].initialCode;
+  document.getElementById('outputText').className = 'output-text waiting';
+  document.getElementById('outputText').textContent = 'Натисни Ctrl+Enter або кнопку Запустити…';
+}
+
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') runCode();
+});
+
+// ── Запуск ────────────────────────────────────────────────────────────────────
+
+renderSidebar();
+renderChapter(0);
+initPyodide();
+</script>
+</body>
+</html>
