@@ -1,19 +1,12 @@
-import React, { useState, useRef, useCallback } from 'react';
-import {
-  StyleSheet, Text, View, TextInput, Pressable, ScrollView, ActivityIndicator,
-} from 'react-native';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withSequence, withSpring,
-} from 'react-native-reanimated';
+import React, { useState, useCallback } from 'react';
+import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
+import { PlaygroundModal } from './PlaygroundModal';
 
 declare global {
-  interface Window {
-    Sk: any;
-  }
+  interface Window { Sk: any; }
 }
 
-// Skulpt CDN loading — singleton promise so we only load once
 let skulptReady: Promise<void> | null = null;
 
 function loadSkulpt(): Promise<void> {
@@ -68,20 +61,19 @@ interface Props {
 }
 
 export function CodePlayground({ initialCode, accentColor }: Props) {
+  const [modalVisible, setModalVisible] = useState(false);
   const [code, setCode] = useState(initialCode);
   const [output, setOutput] = useState('');
   const [running, setRunning] = useState(false);
   const [isError, setIsError] = useState(false);
 
-  const scale = useSharedValue(1);
-  const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const preview = initialCode.split('\n').slice(0, 3).join('\n');
 
   const handleRun = useCallback(async () => {
     if (running) return;
     setRunning(true);
     setOutput('');
     setIsError(false);
-    scale.value = withSequence(withSpring(0.92), withSpring(1));
 
     const result = await runPython(code);
     setRunning(false);
@@ -90,51 +82,46 @@ export function CodePlayground({ initialCode, accentColor }: Props) {
   }, [code, running]);
 
   return (
-    <View style={styles.wrap}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>▶ Редактор Python</Text>
+    <>
+      {/* Compact card */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.dot, { backgroundColor: accentColor }]} />
+          <Text style={styles.cardTitle}>Python Майданчик</Text>
+        </View>
+
+        <View style={styles.previewWrap}>
+          <Text style={styles.previewCode} numberOfLines={3}>{preview}</Text>
+          {initialCode.split('\n').length > 3 && (
+            <Text style={styles.previewMore}>…</Text>
+          )}
+        </View>
+
+        <Pressable
+          style={[styles.openBtn, { backgroundColor: accentColor }]}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={styles.openBtnTxt}>▶ Відкрити редактор</Text>
+        </Pressable>
       </View>
 
-      <TextInput
-        style={styles.editor}
-        multiline
-        value={code}
-        onChangeText={setCode}
-        autoCapitalize="none"
-        autoCorrect={false}
-        spellCheck={false}
-        placeholder="# Напиши свій код тут..."
-        placeholderTextColor={COLORS.textMuted}
+      <PlaygroundModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        code={code}
+        onCodeChange={setCode}
+        onRun={handleRun}
+        running={running}
+        output={output}
+        isError={isError}
+        accentColor={accentColor}
       />
-
-      <Animated.View style={btnStyle}>
-        <Pressable
-          style={[styles.runBtn, { backgroundColor: accentColor }]}
-          onPress={handleRun}
-          disabled={running}
-        >
-          {running
-            ? <ActivityIndicator color="#fff" size="small" />
-            : <Text style={styles.runText}>▶ Запустити</Text>}
-        </Pressable>
-      </Animated.View>
-
-      {output !== '' && (
-        <View style={[styles.outputWrap, isError && styles.outputError]}>
-          <Text style={styles.outputLabel}>{isError ? '✗ Помилка' : '✓ Вивід'}</Text>
-          <ScrollView style={{ maxHeight: 200 }}>
-            <Text style={[styles.outputText, isError && styles.outputTextError]}>
-              {output}
-            </Text>
-          </ScrollView>
-        </View>
-      )}
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
+  card: {
     borderRadius: RADIUS.lg,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
@@ -142,69 +129,52 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xl,
     overflow: 'hidden',
   },
-  header: {
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
-  headerText: {
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  cardTitle: {
     fontFamily: FONTS.bold,
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textMuted,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
   },
-  editor: {
-    minHeight: 140,
+  previewWrap: {
     padding: SPACING.md,
-    fontFamily: 'monospace',
-    fontSize: 14,
-    color: COLORS.text,
-    lineHeight: 22,
-    textAlignVertical: 'top',
+    backgroundColor: '#0a0818',
+    minHeight: 72,
   },
-  runBtn: {
+  previewCode: {
+    fontFamily: 'monospace',
+    fontSize: 13,
+    color: 'rgba(200,211,245,0.5)',
+    lineHeight: 22,
+  },
+  previewMore: {
+    fontFamily: 'monospace',
+    fontSize: 13,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  openBtn: {
     margin: SPACING.md,
-    marginTop: 0,
     borderRadius: RADIUS.md,
-    paddingVertical: 12,
+    paddingVertical: 13,
     alignItems: 'center',
   },
-  runText: {
+  openBtnTxt: {
     fontFamily: FONTS.bold,
     fontSize: 15,
     color: '#fff',
-  },
-  outputWrap: {
-    margin: SPACING.md,
-    marginTop: 0,
-    borderRadius: RADIUS.md,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.md,
-  },
-  outputError: {
-    borderColor: COLORS.red + '88',
-    backgroundColor: 'rgba(239,68,68,0.08)',
-  },
-  outputLabel: {
-    fontFamily: FONTS.bold,
-    fontSize: 11,
-    color: COLORS.textMuted,
-    letterSpacing: 1,
-    marginBottom: 6,
-    textTransform: 'uppercase',
-  },
-  outputText: {
-    fontFamily: 'monospace',
-    fontSize: 13,
-    color: COLORS.text,
-    lineHeight: 20,
-  },
-  outputTextError: {
-    color: COLORS.red,
   },
 });

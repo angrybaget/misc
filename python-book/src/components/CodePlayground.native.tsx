@@ -1,13 +1,9 @@
 import React, { useRef, useState, useCallback } from 'react';
-import {
-  StyleSheet, Text, View, TextInput, Pressable, ScrollView, ActivityIndicator, Platform,
-} from 'react-native';
+import { StyleSheet, Text, View, Pressable, Platform } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withSpring, withSequence, withTiming,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
+import { PlaygroundModal } from './PlaygroundModal';
 
 const SKULPT_HTML = `<!DOCTYPE html>
 <html>
@@ -59,98 +55,77 @@ interface Props {
 }
 
 export function CodePlayground({ initialCode, accentColor }: Props) {
+  const [modalVisible, setModalVisible] = useState(false);
   const [code, setCode] = useState(initialCode);
   const [output, setOutput] = useState('');
-  const [error, setError] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [running, setRunning] = useState(false);
   const webviewRef = useRef<InstanceType<typeof WebView>>(null);
 
-  const btnScale = useSharedValue(1);
-  const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
+  const preview = initialCode.split('\n').slice(0, 3).join('\n');
 
   const onMessage = useCallback((e: WebViewMessageEvent) => {
     try {
       const msg = JSON.parse(e.nativeEvent.data) as { type: string; text: string };
       setRunning(false);
       if (msg.type === 'success') {
-        setError(false);
+        setIsError(false);
         setOutput(msg.text.trim() || '(немає виводу)');
       } else {
-        setError(true);
+        setIsError(true);
         setOutput(msg.text);
       }
     } catch {}
   }, []);
 
-  function runCode() {
+  const handleRun = useCallback(() => {
+    if (running) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    btnScale.value = withSequence(
-      withSpring(0.9, { damping: 10 }),
-      withSpring(1, { damping: 12 }),
-    );
     setRunning(true);
     setOutput('');
-    setError(false);
+    setIsError(false);
     webviewRef.current?.injectJavaScript(
       `handleMsg({data: ${JSON.stringify(JSON.stringify({ type: 'run', code }))}})`,
     );
-  }
-
-  function resetCode() {
-    setCode(initialCode);
-    setOutput('');
-    setError(false);
-  }
+  }, [code, running]);
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.dot} />
-        <Text style={styles.headerTitle}>Python Майданчик</Text>
-        <Pressable onPress={resetCode} style={styles.resetBtn}>
-          <Text style={styles.resetText}>Скинути</Text>
+    <>
+      {/* Compact card */}
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.dot, { backgroundColor: accentColor }]} />
+          <Text style={styles.cardTitle}>Python Майданчик</Text>
+        </View>
+
+        <View style={styles.previewWrap}>
+          <Text style={styles.previewCode} numberOfLines={3}>{preview}</Text>
+          {initialCode.split('\n').length > 3 && (
+            <Text style={styles.previewMore}>…</Text>
+          )}
+        </View>
+
+        <Pressable
+          style={[styles.openBtn, { backgroundColor: accentColor }]}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={styles.openBtnTxt}>▶ Відкрити редактор</Text>
         </Pressable>
       </View>
 
-      {/* Editor */}
-      <TextInput
-        style={styles.editor}
-        value={code}
-        onChangeText={setCode}
-        multiline
-        autoCorrect={false}
-        autoCapitalize="none"
-        spellCheck={false}
-        placeholderTextColor="#444"
+      <PlaygroundModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        code={code}
+        onCodeChange={setCode}
+        onRun={handleRun}
+        running={running}
+        output={output}
+        isError={isError}
+        accentColor={accentColor}
       />
 
-      {/* Run button */}
-      <Animated.View style={[styles.runWrap, btnStyle]}>
-        <Pressable
-          style={[styles.runBtn, { backgroundColor: running ? '#444' : accentColor }]}
-          onPress={runCode}
-          disabled={running}
-        >
-          {running ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.runText}>▶ Запустити</Text>
-          )}
-        </Pressable>
-      </Animated.View>
-
-      {/* Output */}
-      <View style={styles.outputWrap}>
-        <Text style={styles.outputLabel}>Результат</Text>
-        <ScrollView style={styles.outputScroll} nestedScrollEnabled>
-          <Text style={[styles.outputText, error && styles.outputError]}>
-            {output || 'Натисни Запустити, щоб побачити результат…'}
-          </Text>
-        </ScrollView>
-      </View>
-
-      {/* Hidden WebView for Python execution */}
+      {/* Hidden WebView — Python execution engine */}
       <View style={{ height: 0, overflow: 'hidden' }}>
         <WebView
           ref={webviewRef}
@@ -161,102 +136,67 @@ export function CodePlayground({ initialCode, accentColor }: Props) {
           style={{ width: 1, height: 1 }}
         />
       </View>
-    </View>
+    </>
   );
 }
 
+const CODE_FONT = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
+
 const styles = StyleSheet.create({
-  container: {
+  card: {
     borderRadius: RADIUS.lg,
-    overflow: 'hidden',
-    borderWidth: 1.5,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
     borderColor: COLORS.border,
-    marginTop: SPACING.lg,
-    backgroundColor: '#0d0b1e',
+    marginTop: SPACING.xl,
+    overflow: 'hidden',
   },
-  header: {
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
-    backgroundColor: '#13113a',
+    gap: 8,
     paddingHorizontal: SPACING.md,
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
   dot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: COLORS.green,
   },
-  headerTitle: {
+  cardTitle: {
     fontFamily: FONTS.bold,
     fontSize: 13,
     color: COLORS.textMuted,
-    flex: 1,
   },
-  resetBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  resetText: {
-    fontFamily: FONTS.bold,
-    fontSize: 12,
-    color: COLORS.textMuted,
-  },
-  editor: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 13,
-    color: '#c8d3f5',
+  previewWrap: {
     padding: SPACING.md,
-    minHeight: 140,
-    lineHeight: 22,
-    textAlignVertical: 'top',
     backgroundColor: '#0a0818',
+    minHeight: 72,
   },
-  runWrap: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+  previewCode: {
+    fontFamily: CODE_FONT,
+    fontSize: 13,
+    color: 'rgba(200,211,245,0.5)',
+    lineHeight: 22,
   },
-  runBtn: {
-    borderRadius: RADIUS.sm,
-    paddingVertical: 12,
+  previewMore: {
+    fontFamily: CODE_FONT,
+    fontSize: 13,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  openBtn: {
+    margin: SPACING.md,
+    borderRadius: RADIUS.md,
+    paddingVertical: 13,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  runText: {
+  openBtnTxt: {
     fontFamily: FONTS.bold,
     fontSize: 15,
     color: '#fff',
-  },
-  outputWrap: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  outputLabel: {
-    fontFamily: FONTS.bold,
-    fontSize: 10,
-    color: '#4a4880',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    paddingHorizontal: SPACING.md,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  outputScroll: {
-    maxHeight: 120,
-  },
-  outputText: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 13,
-    color: '#a3e635',
-    padding: SPACING.md,
-    lineHeight: 21,
-  },
-  outputError: {
-    color: '#f87171',
   },
 });
