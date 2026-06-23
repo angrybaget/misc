@@ -17,55 +17,89 @@ Always pass `--legacy-peer-deps` to npm. Never omit it.
 
 ## Architecture
 
-- `app/` — expo-router screens (`_layout.tsx`, `index.tsx`, `chapter/[id].tsx`)
-- `src/components/` — UI components
-- `src/data/chapters.ts` — all 10 Ukrainian chapters as typed block arrays
-- `src/store/progress.ts` — Zustand in-memory progress (no persistence)
-- `src/hooks/useShake.ts` + `useShake.native.ts` — platform-specific shake hook
-- `src/theme.ts` — colors, fonts, spacing
+```
+app/
+  _layout.tsx
+  index.tsx                          ← вибір класу (5–9)
+  grade/
+    [grade].tsx                      ← вибір предмету
+    [grade]/
+      [subject].tsx                  ← список уроків
+      [subject]/
+        [lesson].tsx                 ← урок (контент + інтерактив)
+src/
+  data/
+    types.ts                         ← Block, Lesson, SubjectId, GradeId
+    grades.ts                        ← GRADES (id, label, emoji, color, subjects[])
+    subjects.ts                      ← SUBJECTS (id, title, emoji, color)
+    curriculum/
+      informatyka.ts                 ← 5–9 кл, 7 уроків кожен
+      matematyka.ts                  ← 5–6 кл, 7 уроків кожен
+      algebra.ts                     ← 7–9 кл, 6 уроків кожен
+      geometriya.ts                  ← 7–9 кл, 6 уроків кожен
+      index.ts                       ← ALL_CONTENT[], getContent(gradeId, subjectId)
+  components/
+    ContentRenderer.tsx              ← рендер Block[]
+    QuizBlock.tsx                    ← інтерактивний тест (A/B/C/D)
+    FillInBlock.tsx                  ← задача «введи відповідь»
+    CodePlayground.tsx               ← web: Skulpt напряму в браузері
+    CodePlayground.native.tsx        ← native: прихований WebView + injectJavaScript
+    PlaygroundModal.tsx              ← модальне вікно 60/40 (редактор/вивід)
+  hooks/
+    useShake.ts                      ← web stub
+    useShake.native.ts               ← Accelerometer iOS/Android
+  store/
+    progress.ts                      ← Zustand, ключ: "${grade}:${subject}:${lesson}"
+  theme.ts
+```
 
 ## Platform-specific files
 
-Metro resolves `.web.tsx` over `.tsx` on web, and `.native.tsx` over `.tsx` on native.
+Metro: `.native.tsx` > `.tsx` (native), `.tsx` (web fallback — немає `.web.tsx`).
 
-- `CodePlayground.web.tsx` — loads Skulpt via CDN `<script>` tag, runs Python in the main thread
-- `CodePlayground.native.tsx` — hidden WebView + injectJavaScript, postMessage back
-- `useShake.ts` — empty stub (web)
+- `CodePlayground.tsx` — web: Skulpt завантажується через `<script>`, Python виконується в головному потоці
+- `CodePlayground.native.tsx` — native: прихований WebView, код надсилається через injectJavaScript
+- `useShake.ts` — порожня заглушка (web)
 - `useShake.native.ts` — Accelerometer + expo-haptics (iOS/Android)
 
-Never use `Platform.OS === 'web'` guards inside files that import `expo-sensors` — Metro bundles statically and will crash. Always use the `.native.ts` / `.ts` file pair instead.
+## Block types
+
+```ts
+| { type: 'h3' | 'p'; text: string }
+| { type: 'code'; text: string }
+| { type: 'tip' | 'note' | 'warning'; text: string }
+| { type: 'list'; items: string[] }
+| { type: 'table'; headers: string[]; rows: string[][] }
+| { type: 'quiz'; question: string; options: string[]; correct: number; explanation: string }
+| { type: 'fill'; problem: string; hint: string; answer: string }
+```
 
 ## Key constraints
 
-- All user-facing text is in **Ukrainian**
-- Chapter content uses a typed `Block` union (h3, p, code, tip, note, warning, table, list) — never raw HTML strings
-- Progress is in-memory only (Zustand, no AsyncStorage)
-- Python execution uses **Skulpt 1.2.0** (not Pyodide) — lighter, works inside WebView
-- Fonts: Nunito (400, 700, 800) from @expo-google-fonts/nunito
-- Navigation: expo-router Stack, swipe gestures via react-native-gesture-handler
-- Animations: react-native-reanimated v4 (spring, FadeIn, stagger)
+- Весь текст — **українською** (НУШ 2025–2026)
+- Предмети: informatyka (5–9), matematyka (5–6), algebra (7–9), geometriya (7–9)
+- Progress зберігається в пам'яті (Zustand, без AsyncStorage)
+- Python: Skulpt 1.2.0 — не Pyodide
+- Шрифти: Nunito (400/700/800) з @expo-google-fonts/nunito
 
-## Adding a new chapter
+## Додавання нового уроку
 
-Edit `src/data/chapters.ts`. Each chapter follows this shape:
+Відкрий відповідний файл `src/data/curriculum/*.ts` та додай до масиву `lessons`:
 
 ```ts
 {
-  id: 11,
-  emoji: '🔢',
-  title: 'Назва розділу',
+  id: 8,
+  title: 'Назва уроку',
   intro: 'Короткий опис.',
   blocks: [
-    { type: 'h3', text: 'Заголовок' },
-    { type: 'p', text: 'Текст з **жирним** і `кодом` підтримується.' },
-    { type: 'code', text: 'print("hello")' },
-    { type: 'tip', text: 'Порада для учня.' },
+    { type: 'h3', text: 'Підзаголовок' },
+    { type: 'p', text: 'Текст з **жирним** і `кодом`.' },
+    { type: 'quiz', question: '...?', options: ['A','B','C','D'], correct: 0, explanation: '...' },
+    { type: 'fill', problem: 'x + 3 = 7, x = ?', hint: 'підказка', answer: '4' },
   ],
-  initialCode: 'print("Привіт!")',
+  initialCode: 'print("hello")',  // тільки для informatyka
 }
 ```
-
-Then update `COLORS.chapters` in `src/theme.ts` to add a color for the new chapter.
 
 ## Docs reference
 

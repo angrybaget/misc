@@ -13,7 +13,10 @@
       "Bash(/usr/local/bin/brew --version)",
       "Bash(/opt/homebrew/bin/brew install *)",
       "Bash(mkdir -p /Users/volodymyrboiko/Desktop/misc/python-book/app/chapter /Users/volodymyrboiko/Desktop/misc/python-book/src/components /Users/volodymyrboiko/Desktop/misc/python-book/src/data /Users/volodymyrboiko/Desktop/misc/python-book/src/store /Users/volodymyrboiko/Desktop/misc/python-book/src/hooks)",
-      "Bash(mkdir -p /Users/volodymyrboiko/Desktop/misc/python-book/.claude/commands)"
+      "Bash(mkdir -p /Users/volodymyrboiko/Desktop/misc/python-book/.claude/commands)",
+      "WebFetch(domain:mon.gov.ua)",
+      "WebSearch",
+      "WebFetch(domain:osvita.ua)"
     ],
     "additionalDirectories": [
       "/Users/volodymyrboiko/Desktop/misc/python-book/app",
