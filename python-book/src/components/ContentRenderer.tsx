@@ -4,6 +4,7 @@ import { Block } from '../data/types';
 import { useColors } from '../hooks/useColors';
 import { FONTS, RADIUS, SPACING } from '../theme';
 import { QuizBlock } from './QuizBlock';
+import { QuizMultiBlock } from './QuizMultiBlock';
 import { FillInBlock } from './FillInBlock';
 
 const CODE_FONT = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
@@ -134,8 +135,9 @@ export function ContentRenderer({ blocks }: { blocks: Block[] }) {
           case 'table':   return <BlockTable key={i} headers={block.headers} rows={block.rows} />;
           case 'list':    return <BlockList key={i} items={block.items} />;
           case 'image':   return <BlockImage key={i} uri={block.uri} caption={block.caption} />;
-          case 'quiz':    return <QuizBlock key={i} {...block} />;
-          case 'fill':    return <FillInBlock key={i} {...block} />;
+          case 'quiz':       return <QuizBlock key={i} {...block} />;
+          case 'quiz-multi': return <QuizMultiBlock key={i} {...block} />;
+          case 'fill':       return <FillInBlock key={i} {...block} />;
           default:        return null;
         }
       })}

@@ -10,6 +10,7 @@ import * as Haptics from 'expo-haptics';
 import { SUBJECTS } from '../../../../src/data/subjects';
 import { getContent } from '../../../../src/data/curriculum';
 import { useProgress } from '../../../../src/store/progress';
+import { useLessonEditsStore, makeLessonKey } from '../../../../src/store/lessonEdits';
 import { useShake } from '../../../../src/hooks/useShake';
 import { ContentRenderer } from '../../../../src/components/ContentRenderer';
 import { TeacherAccordion } from '../../../../src/components/TeacherAccordion';
@@ -28,10 +29,13 @@ export default function LessonScreen() {
   const gradeId = Number(grade) as GradeId;
   const subjectId = subject as SubjectId;
   const lessonId = Number(lesson);
+  const lKey = makeLessonKey(gradeId, subjectId, lessonId);
 
   const subjectDef = SUBJECTS[subjectId];
   const content = getContent(gradeId, subjectId);
   const lessonData = content?.lessons.find((l) => l.id === lessonId);
+
+  const blockOverride = useLessonEditsStore((s) => s.overrides[lKey]);
 
   const { markDone, isDone } = useProgress();
   const [celebrated, setCelebrated] = useState(false);
@@ -94,7 +98,11 @@ export default function LessonScreen() {
   return (
     <GestureDetector gesture={swipe}>
       <View style={[s.bg, { backgroundColor: C.bg }]}>
-        <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={s.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Header */}
           <LinearGradient
             colors={[color, color + '88', C.bg]}
@@ -122,8 +130,14 @@ export default function LessonScreen() {
 
           {/* Body */}
           <Animated.View entering={FadeIn.delay(200).duration(400)} style={s.body}>
-            {lessonData.teacher && <TeacherAccordion teacher={lessonData.teacher} />}
-            <ContentRenderer blocks={lessonData.blocks} />
+            {lessonData.teacher && (
+              <TeacherAccordion
+                teacher={lessonData.teacher}
+                lessonKey={lKey}
+                originalBlocks={lessonData.blocks}
+              />
+            )}
+            <ContentRenderer blocks={blockOverride ?? lessonData.blocks} />
 
             {lessonData.initialCode && (
               <CodePlayground initialCode={lessonData.initialCode} accentColor={color} />

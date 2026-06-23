@@ -6,6 +6,7 @@ export type Block =
   | { type: 'list'; items: string[] }
   | { type: 'table'; headers: string[]; rows: string[][] }
   | { type: 'quiz'; question: string; options: string[]; correct: number; explanation: string }
+  | { type: 'quiz-multi'; question: string; options: string[]; correct: number[]; explanation: string }
   | { type: 'fill'; problem: string; hint: string; answer: string }
   | { type: 'image'; uri: string; caption: string };
 
