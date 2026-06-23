@@ -65,7 +65,15 @@ export async function saveLesson(
   lesson: Lesson,
 ): Promise<void> {
   const ref = doc(lessonsCol(gradeId, subjectId), String(lesson.id));
-  await setDoc(ref, { ...lesson, order: lesson.id });
+  // blocks stored as JSON string — Firestore rejects nested arrays (table rows: string[][])
+  await setDoc(ref, {
+    id: lesson.id,
+    title: lesson.title,
+    intro: lesson.intro,
+    order: lesson.id,
+    blocksJson: JSON.stringify(lesson.blocks),
+    ...(lesson.initialCode !== undefined ? { initialCode: lesson.initialCode } : {}),
+  });
 }
 
 export async function deleteLesson(

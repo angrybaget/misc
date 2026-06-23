@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, TextInput, ScrollView, Pressable,
-  StyleSheet, Alert, ActivityIndicator,
+  StyleSheet, Alert, ActivityIndicator, Image, Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { fetchLesson, saveLesson } from '../../../../../src/lib/db';
+import { uploadLessonImage } from '../../../../../src/lib/storage';
 import { useColors } from '../../../../../src/hooks/useColors';
 import { GradeId, SubjectId, Block, Lesson } from '../../../../../src/data/types';
 import { FONTS, RADIUS, SPACING } from '../../../../../src/theme';
@@ -32,9 +33,123 @@ function defaultBlock(type: Block['type']): Block {
   }
 }
 
+// ── Image block editor ────────────────────────────────────────────────────────
+
+type ImageBlock = Extract<Block, { type: 'image' }>;
+
+function ImageBlockEditor({
+  block, onChange, gradeId, subjectId, lessonId,
+}: {
+  block: ImageBlock;
+  onChange: (b: Block) => void;
+  gradeId: GradeId;
+  subjectId: SubjectId;
+  lessonId: number | string;
+}) {
+  const C = useColors();
+  const [uploading, setUploading] = useState(false);
+  const [percent, setPercent] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const pickFile = () => {
+    if (Platform.OS !== 'web') return;
+    if (!fileInputRef.current) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) handleUpload(file);
+      };
+      fileInputRef.current = input;
+    }
+    fileInputRef.current.value = '';
+    fileInputRef.current.click();
+  };
+
+  const handleUpload = (file: File) => {
+    setUploading(true);
+    setPercent(0);
+    uploadLessonImage(file, gradeId, subjectId, lessonId, (p) => {
+      if (p.state === 'running') {
+        setPercent(p.percent);
+      } else if (p.state === 'done') {
+        onChange({ ...block, uri: p.url });
+        setUploading(false);
+      } else {
+        Alert.alert('Помилка завантаження', p.message);
+        setUploading(false);
+      }
+    });
+  };
+
+  const inp = [s.input, { backgroundColor: C.surface, borderColor: C.border, color: C.text }] as const;
+
+  return (
+    <View style={{ gap: 10 }}>
+      {/* Preview */}
+      {block.uri ? (
+        <View style={[s.imgPreviewWrap, { borderColor: C.border }]}>
+          <Image
+            source={{ uri: block.uri }}
+            style={s.imgPreview}
+            resizeMode="contain"
+          />
+          <Pressable
+            style={[s.imgRemoveBtn, { backgroundColor: C.surface }]}
+            onPress={() => onChange({ ...block, uri: '' })}
+          >
+            <Text style={{ color: '#e53e3e', fontFamily: FONTS.bold, fontSize: 13 }}>✕ Видалити</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable
+          style={[s.imgUploadArea, { borderColor: C.border, backgroundColor: C.surface }]}
+          onPress={pickFile}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <View style={{ alignItems: 'center', gap: 8 }}>
+              <ActivityIndicator color="#4F46E5" />
+              <Text style={{ color: C.textMuted, fontFamily: FONTS.regular, fontSize: 13 }}>
+                {percent}%
+              </Text>
+            </View>
+          ) : (
+            <View style={{ alignItems: 'center', gap: 6 }}>
+              <Text style={{ fontSize: 32 }}>🖼️</Text>
+              <Text style={{ color: '#4F46E5', fontFamily: FONTS.bold, fontSize: 14 }}>
+                Вибрати зображення
+              </Text>
+              <Text style={{ color: C.textMuted, fontFamily: FONTS.regular, fontSize: 12 }}>
+                JPG, PNG, WebP — до 5 МБ
+              </Text>
+            </View>
+          )}
+        </Pressable>
+      )}
+
+      {/* Caption */}
+      <TextInput
+        style={[...inp]}
+        value={block.caption}
+        onChangeText={t => onChange({ ...block, caption: t })}
+        placeholder="Підпис до зображення"
+        placeholderTextColor={C.textMuted}
+      />
+    </View>
+  );
+}
+
 // ── Block editor ─────────────────────────────────────────────────────────────
 
-function BlockEditor({ block, onChange }: { block: Block; onChange: (b: Block) => void }) {
+function BlockEditor({ block, onChange, gradeId, subjectId, lessonId }: {
+  block: Block;
+  onChange: (b: Block) => void;
+  gradeId: GradeId;
+  subjectId: SubjectId;
+  lessonId: number | string;
+}) {
   const C = useColors();
   const inp = [s.input, { backgroundColor: C.surface, borderColor: C.border, color: C.text }];
 
@@ -122,14 +237,7 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (b: Block) =
   }
 
   if (block.type === 'image') {
-    return (
-      <View style={{ gap: 6 }}>
-        <TextInput style={inp} value={block.uri} onChangeText={t => onChange({ ...block, uri: t })}
-          placeholder="URL зображення" placeholderTextColor={C.textMuted} autoCapitalize="none" />
-        <TextInput style={inp} value={block.caption} onChangeText={t => onChange({ ...block, caption: t })}
-          placeholder="Підпис" placeholderTextColor={C.textMuted} />
-      </View>
-    );
+    return <ImageBlockEditor block={block} onChange={onChange} gradeId={gradeId} subjectId={subjectId} lessonId={lessonId} />;
   }
 
   if (block.type === 'table') {
@@ -309,6 +417,9 @@ export default function LessonEditScreen() {
             </View>
             <BlockEditor
               block={block}
+              gradeId={gradeId}
+              subjectId={subjectId}
+              lessonId={isNew ? 'new' : lessonId}
               onChange={updated => {
                 const next = [...blocks]; next[i] = updated; setBlocks(next);
               }}
@@ -388,4 +499,15 @@ const s = StyleSheet.create({
   },
   addMenuItem: { padding: SPACING.md, borderBottomWidth: 1 },
   addMenuText: { fontFamily: FONTS.regular, fontSize: 14 },
+  imgUploadArea: {
+    borderWidth: 2, borderStyle: 'dashed', borderRadius: RADIUS.lg,
+    padding: SPACING.xl, alignItems: 'center', justifyContent: 'center', minHeight: 140,
+  },
+  imgPreviewWrap: {
+    borderWidth: 1, borderRadius: RADIUS.lg, overflow: 'hidden',
+  },
+  imgPreview: { width: '100%', height: 200 },
+  imgRemoveBtn: {
+    padding: SPACING.sm, alignItems: 'center', borderTopWidth: 1,
+  },
 });

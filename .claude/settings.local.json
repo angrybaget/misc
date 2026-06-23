@@ -32,7 +32,8 @@
       "Bash(grep -v \"^$\")",
       "Bash(./deploy-firebase.sh --no-build)",
       "Bash(curl -s -o /dev/null -w \"/ → HTTP %{http_code}\\\\n\" https://school28-d2877.web.app)",
-      "Bash(curl -s -o /dev/null -w \"/admin → HTTP %{http_code}\\\\n\" \"https://school28-d2877.web.app/admin\")"
+      "Bash(curl -s -o /dev/null -w \"/admin → HTTP %{http_code}\\\\n\" \"https://school28-d2877.web.app/admin\")",
+      "Bash(node -e \"require\\('firebase/storage'\\); console.log\\('storage OK'\\)\")"
     ],
     "additionalDirectories": [
       "/Users/volodymyrboiko/Desktop/misc/python-book/app",
