@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GRADES } from '../data/grades';
 import { COLOR_SCHEMES } from '../data/themes';
 import { useThemeStore } from '../store/theme';
+import { useAdminStore } from '../store/admin';
 import { useColors } from '../hooks/useColors';
 import { FONTS, RADIUS, SPACING } from '../theme';
 
@@ -20,6 +21,7 @@ function NavContent({ onClose }: { onClose?: () => void }) {
   const router = useRouter();
   const C = useColors();
   const { schemeId, setScheme } = useThemeStore();
+  const { user } = useAdminStore();
   const insets = useSafeAreaInsets();
 
   function go(path: string) {
@@ -58,6 +60,20 @@ function NavContent({ onClose }: { onClose?: () => void }) {
         ))}
       </View>
 
+      {/* Admin link */}
+      <Text style={[nav.label, { color: C.textMuted }]}>АДМІН</Text>
+      <Pressable
+        style={({ pressed }) => [nav.item, pressed && { opacity: 0.7 }]}
+        onPress={() => go(user ? '/admin/dashboard' : '/admin')}
+      >
+        <View style={[nav.gradeCircle, { backgroundColor: '#4F46E520', borderColor: '#4F46E588' }]}>
+          <Text style={{ fontSize: 14 }}>{user ? '⚙️' : '🔐'}</Text>
+        </View>
+        <Text style={[nav.itemTxt, { color: C.text }]}>
+          {user ? 'Панель керування' : 'Вхід для вчителя'}
+        </Text>
+      </Pressable>
+
       {/* Theme */}
       <View style={[nav.themeArea, { borderTopColor: C.border }]}>
         <Text style={[nav.label, { color: C.textMuted, paddingTop: SPACING.md }]}>ТЕМА</Text>
@@ -86,6 +102,7 @@ function WideHeader() {
   const router = useRouter();
   const C = useColors();
   const { schemeId, setScheme } = useThemeStore();
+  const { user } = useAdminStore();
   const insets = useSafeAreaInsets();
 
   return (
@@ -119,6 +136,15 @@ function WideHeader() {
             ]} />
           </Pressable>
         ))}
+        <Pressable
+          onPress={() => router.push((user ? '/admin/dashboard' : '/admin') as any)}
+          style={({ pressed }) => [wide.adminBtn, { backgroundColor: C.surface, borderColor: C.border }, pressed && { opacity: 0.7 }]}
+          hitSlop={6}
+        >
+          <Text style={[wide.adminTxt, { color: C.text }]}>
+            {user ? '⚙️ Адмін' : '🔐 Вхід'}
+          </Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -240,6 +266,8 @@ const wide = StyleSheet.create({
   themes: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   themeBtn: { padding: 4 },
   themeDot: { width: 20, height: 20, borderRadius: 10 },
+  adminBtn: { borderWidth: 1, borderRadius: RADIUS.sm, paddingHorizontal: 10, paddingVertical: 4 },
+  adminTxt: { fontFamily: FONTS.bold, fontSize: 13 },
 });
 
 const shell = StyleSheet.create({

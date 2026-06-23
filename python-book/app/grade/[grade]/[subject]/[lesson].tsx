@@ -11,6 +11,7 @@ import { SUBJECTS } from '../../../../src/data/subjects';
 import { useSubjectContent } from '../../../../src/hooks/useSubjectContent';
 import { useProgress } from '../../../../src/store/progress';
 import { useLessonEditsStore, makeLessonKey } from '../../../../src/store/lessonEdits';
+import { useAdminStore } from '../../../../src/store/admin';
 import { useShake } from '../../../../src/hooks/useShake';
 import { ContentRenderer } from '../../../../src/components/ContentRenderer';
 import { TeacherAccordion } from '../../../../src/components/TeacherAccordion';
@@ -38,6 +39,8 @@ export default function LessonScreen() {
   const blockOverride = useLessonEditsStore((s) => s.overrides[lKey]);
 
   const { markDone, isDone } = useProgress();
+  const { user } = useAdminStore();
+  const isAdmin = !!user;
   const [celebrated, setCelebrated] = useState(false);
 
   const celebrateScale = useSharedValue(1);
@@ -116,12 +119,22 @@ export default function LessonScreen() {
             start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
             style={s.headerGrad}
           >
-            <Pressable
-              style={s.backBtn}
-              onPress={() => router.canGoBack() ? router.back() : router.replace(`/grade/${gradeId}/${subjectId}` as any)}
-            >
-              <Text style={s.backText}>← Назад</Text>
-            </Pressable>
+            <View style={s.topBar}>
+              <Pressable
+                style={s.backBtn}
+                onPress={() => router.canGoBack() ? router.back() : router.replace(`/grade/${gradeId}/${subjectId}` as any)}
+              >
+                <Text style={s.backText}>← Назад</Text>
+              </Pressable>
+              {isAdmin && (
+                <Pressable
+                  style={s.editBtn}
+                  onPress={() => router.push(`/admin/${gradeId}/${subjectId}/${lessonId}/edit` as any)}
+                >
+                  <Text style={s.editBtnText}>✏️ Редагувати</Text>
+                </Pressable>
+              )}
+            </View>
 
             <Animated.View entering={FadeIn.duration(400)} style={s.headerContent}>
               <Animated.Text style={[s.subjectEmoji, celebrateStyle]}>
@@ -181,8 +194,11 @@ const s = StyleSheet.create({
   scroll: { paddingBottom: SPACING.xxl },
   notFound: { fontFamily: FONTS.bold, fontSize: 18, textAlign: 'center', marginTop: 100 },
   headerGrad: { paddingBottom: SPACING.xl },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: SPACING.md },
   backBtn: { paddingTop: 56, paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm },
   backText: { fontFamily: FONTS.bold, fontSize: 15, color: 'rgba(255,255,255,0.8)' },
+  editBtn: { marginTop: 40, backgroundColor: 'rgba(0,0,0,0.28)', borderRadius: RADIUS.md, paddingHorizontal: 12, paddingVertical: 6 },
+  editBtnText: { fontFamily: FONTS.bold, fontSize: 13, color: '#fff' },
   headerContent: { paddingHorizontal: SPACING.md, alignItems: 'flex-start' },
   subjectEmoji: { fontSize: 48, marginBottom: SPACING.sm },
   breadcrumb: {

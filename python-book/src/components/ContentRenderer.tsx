@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Platform, Image } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Platform, Image, Pressable } from 'react-native';
 import { Block } from '../data/types';
 import { useColors } from '../hooks/useColors';
 import { FONTS, RADIUS, SPACING } from '../theme';
 import { QuizBlock } from './QuizBlock';
 import { QuizMultiBlock } from './QuizMultiBlock';
 import { FillInBlock } from './FillInBlock';
+import { ImageViewer } from './ImageViewer';
 
 const CODE_FONT = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
 
@@ -168,26 +169,45 @@ function BlockList({ items }: { items: string[] }) {
 function BlockImage({ uri, caption }: { uri: string; caption: string }) {
   const C = useColors();
   const [error, setError] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+
   return (
-    <View style={[s.imgWrap, { borderColor: C.border, backgroundColor: C.card }]}>
-      {error ? (
-        <View style={s.imgErrWrap}>
-          <Text style={[s.imgErrTxt, { color: C.textMuted }]}>🖼️  Зображення недоступне</Text>
-        </View>
-      ) : (
-        <Image
-          source={{ uri }}
-          style={s.img}
-          resizeMode="contain"
-          onError={() => setError(true)}
-        />
-      )}
-      {!!caption && (
-        <View style={[s.imgCaptionWrap, { borderTopColor: C.border, backgroundColor: C.surface }]}>
-          <Text style={[s.imgCaption, { color: C.textMuted }]}>{caption}</Text>
-        </View>
-      )}
-    </View>
+    <>
+      <Pressable
+        style={[s.imgWrap, { borderColor: C.border, backgroundColor: C.card }]}
+        onPress={() => !error && setViewerOpen(true)}
+      >
+        {error ? (
+          <View style={s.imgErrWrap}>
+            <Text style={[s.imgErrTxt, { color: C.textMuted }]}>🖼️  Зображення недоступне</Text>
+          </View>
+        ) : (
+          <>
+            <Image
+              source={{ uri }}
+              style={s.img}
+              resizeMode="contain"
+              onError={() => setError(true)}
+            />
+            <View style={s.zoomHint}>
+              <Text style={s.zoomHintText}>🔍</Text>
+            </View>
+          </>
+        )}
+        {!!caption && (
+          <View style={[s.imgCaptionWrap, { borderTopColor: C.border, backgroundColor: C.surface }]}>
+            <Text style={[s.imgCaption, { color: C.textMuted }]}>{caption}</Text>
+          </View>
+        )}
+      </Pressable>
+
+      <ImageViewer
+        uri={uri}
+        caption={caption}
+        visible={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+      />
+    </>
   );
 }
 
@@ -359,6 +379,12 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   img: { width: '100%', height: 220 },
+  zoomHint: {
+    position: 'absolute', top: 8, right: 8,
+    backgroundColor: 'rgba(0,0,0,0.35)', borderRadius: 12,
+    paddingHorizontal: 7, paddingVertical: 3,
+  },
+  zoomHintText: { fontSize: 12 },
   imgErrWrap: { height: 100, alignItems: 'center', justifyContent: 'center' },
   imgErrTxt: { fontFamily: FONTS.regular, fontSize: 13 },
   imgCaptionWrap: {
