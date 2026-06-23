@@ -18,7 +18,14 @@
       "WebSearch",
       "WebFetch(domain:osvita.ua)",
       "Bash(npx tsc *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(firebase --version)",
+      "Bash(npm install *)",
+      "Bash(firebase login *)",
+      "Bash(firebase login --interactive 2>&1 & *)",
+      "Read(//tmp/**)",
+      "Bash(python3 -c \"import time; print\\('Unix timestamp:', int\\(time.time\\(\\)\\)\\)\")",
+      "Bash(python3)"
     ],
     "additionalDirectories": [
       "/Users/volodymyrboiko/Desktop/misc/python-book/app",

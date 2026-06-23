@@ -119,6 +119,27 @@ State lives in `src/store/theme.ts` (Zustand). Access active colors with `const 
 }
 ```
 
+## Deploy to Firebase Hosting
+
+```bash
+./deploy-firebase.sh            # build + deploy
+./deploy-firebase.sh --no-build # deploy existing dist/ only
+```
+
+No `firebase login` needed — uses service account JWT via REST API.
+
+**Service account key location** (script checks in this order):
+1. `~/.config/secrets/school28-d2877-sa.json` ← постійне місце
+2. `~/Downloads/school28-d2877-firebase-adminsdk-fbsvc-*.json` ← fallback
+
+Live URLs: https://school28-d2877.web.app · https://school28-d2877.firebaseapp.com
+
+## Secrets rule
+
+All service account keys and tokens belong in `~/.config/secrets/` with `chmod 600`.
+Never put secrets inside the project directory — even in `.env` files that are gitignored.
+The deploy script must read keys from `~/.config/secrets/`, not from the repo.
+
 ## Docs reference
 
 Expo SDK 56 docs: https://docs.expo.dev/versions/v56.0.0/
