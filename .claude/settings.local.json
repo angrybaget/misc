@@ -16,7 +16,9 @@
       "Bash(mkdir -p /Users/volodymyrboiko/Desktop/misc/python-book/.claude/commands)",
       "WebFetch(domain:mon.gov.ua)",
       "WebSearch",
-      "WebFetch(domain:osvita.ua)"
+      "WebFetch(domain:osvita.ua)",
+      "Bash(npx tsc *)",
+      "Bash(node -e ' *)"
     ],
     "additionalDirectories": [
       "/Users/volodymyrboiko/Desktop/misc/python-book/app",

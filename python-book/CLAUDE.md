@@ -72,7 +72,25 @@ Metro: `.native.tsx` > `.tsx` (native), `.tsx` (web fallback — немає `.we
 | { type: 'table'; headers: string[]; rows: string[][] }
 | { type: 'quiz'; question: string; options: string[]; correct: number; explanation: string }
 | { type: 'fill'; problem: string; hint: string; answer: string }
+| { type: 'image'; uri: string; caption: string }
 ```
+
+For `image` blocks use Wikimedia Commons PNG-rendered URLs (works in React Native `Image`):
+- SVG files: `https://upload.wikimedia.org/wikipedia/commons/thumb/a/b/file.svg/320px-file.svg.png`
+- JPG files: `https://upload.wikimedia.org/wikipedia/commons/thumb/a/b/file.jpg/320px-file.jpg`
+
+## Theme system
+
+Three color schemes (`SchemeId = 'indigo' | 'pine' | 'amber'`) defined in `src/data/themes.ts`.
+State lives in `src/store/theme.ts` (Zustand). Access active colors with `const C = useColors()` from `src/hooks/useColors.ts`.
+
+**Dynamic theming rule**: `StyleSheet.create()` runs at module init — only put layout/sizing there. Apply colors as inline overrides: `[styles.wrap, { backgroundColor: C.bg }]`.
+
+## Navigation shell
+
+`src/components/AppShell.tsx` wraps every screen (via `app/_layout.tsx`):
+- Mobile (< 768px): floating ☰ button (top-right) + animated slide-in drawer
+- Tablet+ (≥ 768px): persistent `WideHeader` (logo + grade links + theme dots)
 
 ## Key constraints
 

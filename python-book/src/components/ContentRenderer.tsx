@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, Platform, Image } from 'react-native';
 import { Block } from '../data/types';
 import { useColors } from '../hooks/useColors';
 import { FONTS, RADIUS, SPACING } from '../theme';
@@ -86,6 +86,26 @@ function BlockTable({ headers, rows }: { headers: string[]; rows: string[][] }) 
   );
 }
 
+function BlockImage({ uri, caption }: { uri: string; caption: string }) {
+  const C = useColors();
+  const [error, setError] = useState(false);
+  return (
+    <View style={[s.imgWrap, { backgroundColor: C.card, borderColor: C.border }]}>
+      {error ? (
+        <Text style={[s.imgError, { color: C.textMuted }]}>🖼️ Зображення недоступне</Text>
+      ) : (
+        <Image
+          source={{ uri }}
+          style={s.img}
+          resizeMode="contain"
+          onError={() => setError(true)}
+        />
+      )}
+      {!!caption && <Text style={[s.imgCaption, { color: C.textMuted }]}>{caption}</Text>}
+    </View>
+  );
+}
+
 function BlockList({ items }: { items: string[] }) {
   const C = useColors();
   return (
@@ -113,6 +133,7 @@ export function ContentRenderer({ blocks }: { blocks: Block[] }) {
           case 'warning': return <BlockCallout key={i} variant={block.type} text={block.text} />;
           case 'table':   return <BlockTable key={i} headers={block.headers} rows={block.rows} />;
           case 'list':    return <BlockList key={i} items={block.items} />;
+          case 'image':   return <BlockImage key={i} uri={block.uri} caption={block.caption} />;
           case 'quiz':    return <QuizBlock key={i} {...block} />;
           case 'fill':    return <FillInBlock key={i} {...block} />;
           default:        return null;
@@ -148,4 +169,9 @@ const s = StyleSheet.create({
   listItem: { flexDirection: 'row', gap: 8, marginBottom: 6 },
   bullet: { fontSize: 16, lineHeight: 24 },
   listText: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 24, flex: 1 },
+  // image block
+  imgWrap: { borderRadius: RADIUS.md, borderWidth: 1, marginVertical: SPACING.sm, overflow: 'hidden' },
+  img: { width: '100%', height: 200 },
+  imgError: { fontFamily: FONTS.regular, fontSize: 13, padding: SPACING.md, textAlign: 'center' },
+  imgCaption: { fontFamily: FONTS.regular, fontSize: 12, textAlign: 'center', padding: SPACING.sm, fontStyle: 'italic' },
 });

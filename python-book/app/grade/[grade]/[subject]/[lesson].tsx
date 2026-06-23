@@ -12,6 +12,7 @@ import { getContent } from '../../../../src/data/curriculum';
 import { useProgress } from '../../../../src/store/progress';
 import { useShake } from '../../../../src/hooks/useShake';
 import { ContentRenderer } from '../../../../src/components/ContentRenderer';
+import { TeacherAccordion } from '../../../../src/components/TeacherAccordion';
 import { CodePlayground } from '../../../../src/components/CodePlayground';
 import { useColors } from '../../../../src/hooks/useColors';
 import { GradeId, SubjectId } from '../../../../src/data/types';
@@ -121,6 +122,7 @@ export default function LessonScreen() {
 
           {/* Body */}
           <Animated.View entering={FadeIn.delay(200).duration(400)} style={s.body}>
+            {lessonData.teacher && <TeacherAccordion teacher={lessonData.teacher} />}
             <ContentRenderer blocks={lessonData.blocks} />
 
             {lessonData.initialCode && (
