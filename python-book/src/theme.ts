@@ -1,13 +1,13 @@
 export const COLORS = {
-  bg: '#0d0b21',
-  surface: '#1a1744',
-  card: '#221f50',
-  border: '#2e2b60',
-  text: '#f0efff',
-  textMuted: '#9896c8',
+  bg: '#f5f4ff',
+  surface: '#ffffff',
+  card: '#eeedfb',
+  border: '#dddcf5',
+  text: '#1e1b4b',
+  textMuted: '#7876aa',
   accent: '#6366f1',
-  green: '#10b981',
-  red: '#f87171',
+  green: '#059669',
+  red: '#dc2626',
   white: '#ffffff',
 
   chapters: [

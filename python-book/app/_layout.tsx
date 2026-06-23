@@ -9,6 +9,8 @@ import {
 } from '@expo-google-fonts/nunito';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { AppShell } from '../src/components/AppShell';
+import { useThemeStore } from '../src/store/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,16 +27,24 @@ export default function RootLayout() {
 
   if (!fontsLoaded) return null;
 
+  return <ThemedApp />;
+}
+
+function ThemedApp() {
+  const { colors } = useThemeStore();
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: '#0d0b21' },
-          animation: 'slide_from_right',
-        }}
-      />
+      <StatusBar style="dark" />
+      <AppShell>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.bg },
+            animation: 'slide_from_right',
+          }}
+        />
+      </AppShell>
     </GestureHandlerRootView>
   );
 }

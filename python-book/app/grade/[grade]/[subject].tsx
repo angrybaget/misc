@@ -6,12 +6,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SUBJECTS } from '../../../src/data/subjects';
 import { getContent } from '../../../src/data/curriculum';
 import { useProgress } from '../../../src/store/progress';
+import { useColors } from '../../../src/hooks/useColors';
 import { GradeId, SubjectId } from '../../../src/data/types';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../../src/theme';
+import { FONTS, RADIUS, SPACING } from '../../../src/theme';
 
 export default function SubjectScreen() {
   const { grade, subject } = useLocalSearchParams<{ grade: string; subject: string }>();
   const router = useRouter();
+  const C = useColors();
   const gradeId = Number(grade) as GradeId;
   const subjectId = subject as SubjectId;
 
@@ -25,53 +27,54 @@ export default function SubjectScreen() {
   const total = content.lessons.length;
 
   return (
-    <View style={styles.bg}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <View style={[s.bg, { backgroundColor: C.bg }]}>
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <LinearGradient
-          colors={[subjectDef.color + 'dd', subjectDef.color + '33', '#0d0b21']}
+          colors={[subjectDef.color + 'dd', subjectDef.color + '33', C.bg]}
           start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-          style={styles.header}
+          style={s.header}
         >
           <Pressable
-            style={styles.backBtn}
+            style={s.backBtn}
             onPress={() => router.canGoBack() ? router.back() : router.replace('/')}
           >
-            <Text style={styles.backText}>← Назад</Text>
+            <Text style={s.backText}>← Назад</Text>
           </Pressable>
-          <Animated.View entering={FadeIn.duration(400)} style={styles.headerContent}>
-            <Text style={styles.emoji}>{subjectDef.emoji}</Text>
-            <Text style={styles.subjectTitle}>{subjectDef.title}</Text>
-            <Text style={styles.subtitle}>{grade} клас · {content.totalHours} год/рік</Text>
-            <View style={styles.progressRow}>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${(done / total) * 100}%`, backgroundColor: subjectDef.color }]} />
+          <Animated.View entering={FadeIn.duration(400)} style={s.headerContent}>
+            <Text style={s.emoji}>{subjectDef.emoji}</Text>
+            <Text style={[s.subjectTitle, { color: C.text }]}>{subjectDef.title}</Text>
+            <Text style={s.subtitle}>{grade} клас · {content.totalHours} год/рік</Text>
+            <View style={s.progressRow}>
+              <View style={[s.progressBar, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                <View style={[s.progressFill, { width: `${(done / total) * 100}%`, backgroundColor: subjectDef.color }]} />
               </View>
-              <Text style={styles.progressLabel}>{done}/{total} уроків</Text>
+              <Text style={s.progressLabel}>{done}/{total} уроків</Text>
             </View>
           </Animated.View>
         </LinearGradient>
 
         {/* Lesson list */}
-        <View style={styles.list}>
+        <View style={s.list}>
           {content.lessons.map((lesson, i) => {
-            const done = isDone(gradeId, subjectId, lesson.id);
+            const lessonDone = isDone(gradeId, subjectId, lesson.id);
             return (
               <Animated.View key={lesson.id} entering={FadeInDown.delay(i * 60).springify()}>
                 <Pressable
-                  style={({ pressed }) => [styles.lessonCard, pressed && { opacity: 0.85 }]}
+                  style={({ pressed }) => [s.card, { backgroundColor: C.surface, borderColor: C.border }, pressed && { opacity: 0.85 }]}
                   onPress={() => router.push(`/grade/${gradeId}/${subjectId}/${lesson.id}` as any)}
                 >
-                  <View style={[styles.lessonNum, done && { backgroundColor: subjectDef.color + '33', borderColor: subjectDef.color }]}>
-                    {done
-                      ? <Text style={[styles.lessonNumText, { color: subjectDef.color }]}>✓</Text>
-                      : <Text style={styles.lessonNumText}>{i + 1}</Text>}
+                  <View style={[s.lessonNum, { borderColor: C.border, backgroundColor: 'rgba(0,0,0,0.03)' },
+                    lessonDone && { backgroundColor: subjectDef.color + '28', borderColor: subjectDef.color }]}>
+                    {lessonDone
+                      ? <Text style={[s.lessonNumText, { color: subjectDef.color }]}>✓</Text>
+                      : <Text style={[s.lessonNumText, { color: C.textMuted }]}>{i + 1}</Text>}
                   </View>
-                  <View style={styles.lessonText}>
-                    <Text style={styles.lessonTitle} numberOfLines={2}>{lesson.title}</Text>
-                    <Text style={styles.lessonIntro} numberOfLines={1}>{lesson.intro}</Text>
+                  <View style={s.lessonText}>
+                    <Text style={[s.lessonTitle, { color: C.text }]} numberOfLines={2}>{lesson.title}</Text>
+                    <Text style={[s.lessonIntro, { color: C.textMuted }]} numberOfLines={1}>{lesson.intro}</Text>
                   </View>
-                  <Text style={styles.arrow}>›</Text>
+                  <Text style={[s.arrow, { color: C.textMuted }]}>›</Text>
                 </Pressable>
               </Animated.View>
             );
@@ -82,56 +85,26 @@ export default function SubjectScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: COLORS.bg },
+const s = StyleSheet.create({
+  bg: { flex: 1 },
   scroll: { paddingBottom: SPACING.xxl },
   header: { paddingBottom: SPACING.xl },
-  backBtn: {
-    paddingTop: 56,
-    paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.sm,
-  },
-  backText: {
-    fontFamily: FONTS.bold,
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.8)',
-  },
+  backBtn: { paddingTop: 56, paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm },
+  backText: { fontFamily: FONTS.bold, fontSize: 15, color: 'rgba(255,255,255,0.8)' },
   headerContent: { paddingHorizontal: SPACING.md },
   emoji: { fontSize: 48, marginBottom: SPACING.sm },
-  subjectTitle: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 32,
-    color: COLORS.text,
-  },
-  subtitle: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
-    marginTop: 4,
-    marginBottom: SPACING.md,
-  },
+  subjectTitle: { fontFamily: FONTS.extraBold, fontSize: 32 },
+  subtitle: { fontFamily: FONTS.regular, fontSize: 14, color: 'rgba(255,255,255,0.6)', marginTop: 4, marginBottom: SPACING.md },
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  progressBar: {
-    flex: 1,
-    height: 6,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
+  progressBar: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 3 },
-  progressLabel: {
-    fontFamily: FONTS.bold,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
-  },
+  progressLabel: { fontFamily: FONTS.bold, fontSize: 12, color: 'rgba(255,255,255,0.6)' },
   list: { padding: SPACING.md, gap: 10 },
-  lessonCard: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
     padding: SPACING.md,
     gap: 12,
   },
@@ -140,32 +113,12 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
   },
-  lessonNumText: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 16,
-    color: COLORS.textMuted,
-  },
+  lessonNumText: { fontFamily: FONTS.extraBold, fontSize: 16 },
   lessonText: { flex: 1 },
-  lessonTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: 15,
-    color: COLORS.text,
-    lineHeight: 21,
-  },
-  lessonIntro: {
-    fontFamily: FONTS.regular,
-    fontSize: 13,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
-  arrow: {
-    fontFamily: FONTS.bold,
-    fontSize: 22,
-    color: COLORS.textMuted,
-  },
+  lessonTitle: { fontFamily: FONTS.bold, fontSize: 15, lineHeight: 21 },
+  lessonIntro: { fontFamily: FONTS.regular, fontSize: 13, marginTop: 2 },
+  arrow: { fontFamily: FONTS.bold, fontSize: 22 },
 });

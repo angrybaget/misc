@@ -1,19 +1,27 @@
 import React from 'react';
 import { StyleSheet, Text, View, ScrollView, Platform } from 'react-native';
 import { Block } from '../data/types';
-import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
+import { useColors } from '../hooks/useColors';
+import { FONTS, RADIUS, SPACING } from '../theme';
 import { QuizBlock } from './QuizBlock';
 import { FillInBlock } from './FillInBlock';
 
+const CODE_FONT = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
+
 function InlineText({ text, style }: { text: string; style?: object }) {
+  const C = useColors();
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
   return (
     <Text style={style}>
       {parts.map((part, i) => {
         if (part.startsWith('**') && part.endsWith('**'))
-          return <Text key={i} style={styles.bold}>{part.slice(2, -2)}</Text>;
+          return <Text key={i} style={[s.bold, { color: C.text }]}>{part.slice(2, -2)}</Text>;
         if (part.startsWith('`') && part.endsWith('`'))
-          return <Text key={i} style={styles.inlineCode}>{part.slice(1, -1)}</Text>;
+          return (
+            <Text key={i} style={[s.inlineCode, { color: C.accent, backgroundColor: C.accentSoft }]}>
+              {part.slice(1, -1)}
+            </Text>
+          );
         return <Text key={i}>{part}</Text>;
       })}
     </Text>
@@ -21,19 +29,22 @@ function InlineText({ text, style }: { text: string; style?: object }) {
 }
 
 function BlockH3({ text }: { text: string }) {
-  return <Text style={styles.h3}>{text}</Text>;
+  const C = useColors();
+  return <Text style={[s.h3, { color: C.text }]}>{text}</Text>;
 }
 
 function BlockP({ text }: { text: string }) {
-  return <InlineText text={text} style={styles.p} />;
+  const C = useColors();
+  return <InlineText text={text} style={[s.p, { color: C.text }]} />;
 }
 
 function BlockCode({ text }: { text: string }) {
+  const C = useColors();
   return (
-    <View style={styles.codeBlock}>
-      <Text style={styles.codeLabel}>код</Text>
+    <View style={[s.codeBlock, { backgroundColor: C.codeBg, borderColor: C.border }]}>
+      <Text style={[s.codeLabel, { color: C.accent, backgroundColor: C.codeLabelBg }]}>код</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <Text style={styles.code}>{text}</Text>
+        <Text style={[s.code, { color: C.codeText }]}>{text}</Text>
       </ScrollView>
     </View>
   );
@@ -46,26 +57,27 @@ function BlockCallout({ variant, text }: { variant: 'tip' | 'note' | 'warning'; 
     warning: { bg: '#2d1500', border: '#f59e0b', color: '#fcd34d', icon: '⚠️ Увага' },
   }[variant];
   return (
-    <View style={[styles.callout, { backgroundColor: config.bg, borderLeftColor: config.border }]}>
-      <Text style={[styles.calloutTitle, { color: config.color }]}>{config.icon}</Text>
-      <Text style={[styles.calloutBody, { color: config.color }]}>{text}</Text>
+    <View style={[s.callout, { backgroundColor: config.bg, borderLeftColor: config.border }]}>
+      <Text style={[s.calloutTitle, { color: config.color }]}>{config.icon}</Text>
+      <Text style={[s.calloutBody, { color: config.color }]}>{text}</Text>
     </View>
   );
 }
 
 function BlockTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  const C = useColors();
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tableScroll}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.tableScroll}>
       <View>
-        <View style={[styles.tableRow, styles.tableHeader]}>
+        <View style={[s.tableRow, { backgroundColor: C.accentSoft, borderBottomColor: C.border }]}>
           {headers.map((h, i) => (
-            <Text key={i} style={[styles.tableCell, styles.tableHeadCell]}>{h}</Text>
+            <Text key={i} style={[s.tableCell, s.tableHeadCell, { color: C.text }]}>{h}</Text>
           ))}
         </View>
         {rows.map((row, ri) => (
-          <View key={ri} style={[styles.tableRow, ri % 2 === 1 && styles.tableRowAlt]}>
+          <View key={ri} style={[s.tableRow, { borderBottomColor: C.border }, ri % 2 === 1 && { backgroundColor: C.card }]}>
             {row.map((cell, ci) => (
-              <Text key={ci} style={styles.tableCell}>{cell}</Text>
+              <Text key={ci} style={[s.tableCell, { color: C.text }]}>{cell}</Text>
             ))}
           </View>
         ))}
@@ -75,12 +87,13 @@ function BlockTable({ headers, rows }: { headers: string[]; rows: string[][] }) 
 }
 
 function BlockList({ items }: { items: string[] }) {
+  const C = useColors();
   return (
-    <View style={styles.listBlock}>
+    <View style={s.listBlock}>
       {items.map((item, i) => (
-        <View key={i} style={styles.listItem}>
-          <Text style={styles.bullet}>•</Text>
-          <InlineText text={item} style={styles.listText} />
+        <View key={i} style={s.listItem}>
+          <Text style={[s.bullet, { color: C.accent }]}>•</Text>
+          <InlineText text={item} style={[s.listText, { color: C.text }]} />
         </View>
       ))}
     </View>
@@ -109,105 +122,30 @@ export function ContentRenderer({ blocks }: { blocks: Block[] }) {
   );
 }
 
-const CODE_FONT = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
-
-const styles = StyleSheet.create({
-  h3: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 20,
-    color: COLORS.text,
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.sm,
-  },
-  p: {
-    fontFamily: FONTS.regular,
-    fontSize: 15,
-    color: '#ccc8f0',
-    lineHeight: 24,
-    marginBottom: SPACING.sm,
-  },
-  bold: { fontFamily: FONTS.bold, color: COLORS.text },
-  inlineCode: {
-    fontFamily: CODE_FONT,
-    fontSize: 13,
-    color: '#a5b4fc',
-    backgroundColor: '#1e1a4a',
-    borderRadius: 4,
-  },
-  codeBlock: {
-    backgroundColor: '#0d0b1e',
-    borderRadius: RADIUS.md,
-    overflow: 'hidden',
-    marginVertical: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
+const s = StyleSheet.create({
+  h3: { fontFamily: FONTS.extraBold, fontSize: 20, marginTop: SPACING.lg, marginBottom: SPACING.sm },
+  p: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 24, marginBottom: SPACING.sm },
+  bold: { fontFamily: FONTS.bold },
+  inlineCode: { fontFamily: CODE_FONT, fontSize: 13, borderRadius: 4 },
+  codeBlock: { borderRadius: RADIUS.md, overflow: 'hidden', marginVertical: SPACING.sm, borderWidth: 1 },
   codeLabel: {
     fontFamily: FONTS.regular,
     fontSize: 11,
-    color: '#6366f1',
-    backgroundColor: '#13113a',
     paddingHorizontal: SPACING.md,
     paddingVertical: 6,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  code: {
-    fontFamily: CODE_FONT,
-    fontSize: 13,
-    color: '#c8d3f5',
-    padding: SPACING.md,
-    lineHeight: 22,
-  },
-  callout: {
-    borderLeftWidth: 4,
-    borderRadius: RADIUS.sm,
-    padding: SPACING.md,
-    marginVertical: SPACING.sm,
-  },
-  calloutTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 4,
-  },
-  calloutBody: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    lineHeight: 22,
-  },
+  code: { fontFamily: CODE_FONT, fontSize: 13, padding: SPACING.md, lineHeight: 22 },
+  callout: { borderLeftWidth: 4, borderRadius: RADIUS.sm, padding: SPACING.md, marginVertical: SPACING.sm },
+  calloutTitle: { fontFamily: FONTS.bold, fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
+  calloutBody: { fontFamily: FONTS.regular, fontSize: 14, lineHeight: 22 },
   tableScroll: { marginVertical: SPACING.sm },
-  tableRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  tableRowAlt: { backgroundColor: '#1a1744' },
-  tableHeader: { backgroundColor: '#221f50' },
-  tableCell: {
-    fontFamily: CODE_FONT,
-    fontSize: 12,
-    color: COLORS.textMuted,
-    padding: 10,
-    minWidth: 100,
-    maxWidth: 240,
-  },
-  tableHeadCell: {
-    fontFamily: FONTS.bold,
-    fontSize: 11,
-    color: COLORS.text,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
+  tableRow: { flexDirection: 'row', borderBottomWidth: 1 },
+  tableCell: { fontFamily: CODE_FONT, fontSize: 12, padding: 10, minWidth: 100, maxWidth: 240 },
+  tableHeadCell: { fontFamily: FONTS.bold, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
   listBlock: { marginVertical: SPACING.sm },
   listItem: { flexDirection: 'row', gap: 8, marginBottom: 6 },
-  bullet: { color: COLORS.accent, fontSize: 16, lineHeight: 24 },
-  listText: {
-    fontFamily: FONTS.regular,
-    fontSize: 15,
-    color: '#ccc8f0',
-    lineHeight: 24,
-    flex: 1,
-  },
+  bullet: { fontSize: 16, lineHeight: 24 },
+  listText: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 24, flex: 1 },
 });

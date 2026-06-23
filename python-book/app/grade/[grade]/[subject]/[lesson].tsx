@@ -13,14 +13,16 @@ import { useProgress } from '../../../../src/store/progress';
 import { useShake } from '../../../../src/hooks/useShake';
 import { ContentRenderer } from '../../../../src/components/ContentRenderer';
 import { CodePlayground } from '../../../../src/components/CodePlayground';
+import { useColors } from '../../../../src/hooks/useColors';
 import { GradeId, SubjectId } from '../../../../src/data/types';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../../../src/theme';
+import { FONTS, RADIUS, SPACING } from '../../../../src/theme';
 
 export default function LessonScreen() {
   const { grade, subject, lesson } = useLocalSearchParams<{
     grade: string; subject: string; lesson: string;
   }>();
   const router = useRouter();
+  const C = useColors();
 
   const gradeId = Number(grade) as GradeId;
   const subjectId = subject as SubjectId;
@@ -51,8 +53,8 @@ export default function LessonScreen() {
 
   if (!lessonData || !subjectDef || !content) {
     return (
-      <View style={styles.bg}>
-        <Text style={styles.notFound}>Урок не знайдено</Text>
+      <View style={[s.bg, { backgroundColor: C.bg }]}>
+        <Text style={[s.notFound, { color: C.text }]}>Урок не знайдено</Text>
       </View>
     );
   }
@@ -90,58 +92,58 @@ export default function LessonScreen() {
 
   return (
     <GestureDetector gesture={swipe}>
-      <View style={styles.bg}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <View style={[s.bg, { backgroundColor: C.bg }]}>
+        <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <LinearGradient
-            colors={[color, color + '88', '#0d0b21']}
+            colors={[color, color + '88', C.bg]}
             start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-            style={styles.headerGrad}
+            style={s.headerGrad}
           >
             <Pressable
-              style={styles.backBtn}
+              style={s.backBtn}
               onPress={() => router.canGoBack() ? router.back() : router.replace(`/grade/${gradeId}/${subjectId}` as any)}
             >
-              <Text style={styles.backText}>← Назад</Text>
+              <Text style={s.backText}>← Назад</Text>
             </Pressable>
 
-            <Animated.View entering={FadeIn.duration(400)} style={styles.headerContent}>
-              <Animated.Text style={[styles.subjectEmoji, celebrateStyle]}>
+            <Animated.View entering={FadeIn.duration(400)} style={s.headerContent}>
+              <Animated.Text style={[s.subjectEmoji, celebrateStyle]}>
                 {subjectDef.emoji}
               </Animated.Text>
-              <Text style={styles.breadcrumb}>
+              <Text style={s.breadcrumb}>
                 {gradeId} клас · {subjectDef.title} · Урок {lessonIndex + 1}/{content.lessons.length}
               </Text>
-              <Text style={styles.lessonTitle}>{lessonData.title}</Text>
-              <Text style={styles.intro}>{lessonData.intro}</Text>
+              <Text style={s.lessonTitle}>{lessonData.title}</Text>
+              <Text style={s.intro}>{lessonData.intro}</Text>
             </Animated.View>
           </LinearGradient>
 
           {/* Body */}
-          <Animated.View entering={FadeIn.delay(200).duration(400)} style={styles.body}>
+          <Animated.View entering={FadeIn.delay(200).duration(400)} style={s.body}>
             <ContentRenderer blocks={lessonData.blocks} />
 
             {lessonData.initialCode && (
               <CodePlayground initialCode={lessonData.initialCode} accentColor={color} />
             )}
 
-            <Text style={styles.swipeHint}>← Свайп для переходу між уроками →</Text>
+            <Text style={[s.swipeHint, { color: C.textMuted }]}>← Свайп для переходу між уроками →</Text>
 
             <Pressable
-              style={[styles.nextBtn, { backgroundColor: alreadyDone ? COLORS.green : color }]}
+              style={[s.nextBtn, { backgroundColor: alreadyDone ? C.green : color }]}
               onPress={handleComplete}
             >
-              <Text style={styles.nextText}>
+              <Text style={s.nextText}>
                 {alreadyDone ? '✓ Завершено' : isLast ? '🏆 Завершити предмет' : 'Далі →'}
               </Text>
             </Pressable>
 
             {prevLesson && (
               <Pressable
-                style={styles.prevBtn}
+                style={s.prevBtn}
                 onPress={() => router.replace(`/grade/${gradeId}/${subjectId}/${prevLesson.id}` as any)}
               >
-                <Text style={styles.prevText}>← Попередній урок</Text>
+                <Text style={[s.prevText, { color: C.textMuted }]}>← Попередній урок</Text>
               </Pressable>
             )}
           </Animated.View>
@@ -151,27 +153,13 @@ export default function LessonScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: COLORS.bg },
+const s = StyleSheet.create({
+  bg: { flex: 1 },
   scroll: { paddingBottom: SPACING.xxl },
-  notFound: {
-    color: COLORS.text,
-    fontFamily: FONTS.bold,
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 100,
-  },
+  notFound: { fontFamily: FONTS.bold, fontSize: 18, textAlign: 'center', marginTop: 100 },
   headerGrad: { paddingBottom: SPACING.xl },
-  backBtn: {
-    paddingTop: 56,
-    paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.sm,
-  },
-  backText: {
-    fontFamily: FONTS.bold,
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.8)',
-  },
+  backBtn: { paddingTop: 56, paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm },
+  backText: { fontFamily: FONTS.bold, fontSize: 15, color: 'rgba(255,255,255,0.8)' },
   headerContent: { paddingHorizontal: SPACING.md, alignItems: 'flex-start' },
   subjectEmoji: { fontSize: 48, marginBottom: SPACING.sm },
   breadcrumb: {
@@ -189,29 +177,18 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     marginBottom: SPACING.sm,
   },
-  intro: {
-    fontFamily: FONTS.regular,
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.75)',
-    lineHeight: 24,
-  },
+  intro: { fontFamily: FONTS.regular, fontSize: 15, color: 'rgba(255,255,255,0.75)', lineHeight: 24 },
   body: { paddingHorizontal: SPACING.md, paddingTop: SPACING.lg },
   swipeHint: {
     fontFamily: FONTS.regular,
     fontSize: 12,
-    color: COLORS.textMuted,
     textAlign: 'center',
     marginTop: SPACING.xl,
     marginBottom: SPACING.md,
     letterSpacing: 0.5,
   },
-  nextBtn: {
-    borderRadius: RADIUS.md,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
+  nextBtn: { borderRadius: RADIUS.md, paddingVertical: 16, alignItems: 'center', marginBottom: SPACING.sm },
   nextText: { fontFamily: FONTS.bold, fontSize: 17, color: '#fff' },
   prevBtn: { paddingVertical: 14, alignItems: 'center' },
-  prevText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.textMuted },
+  prevText: { fontFamily: FONTS.bold, fontSize: 15 },
 });

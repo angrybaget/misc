@@ -4,7 +4,8 @@ import {
   StyleSheet, ActivityIndicator, Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
+import { useColors } from '../hooks/useColors';
+import { FONTS, RADIUS, SPACING } from '../theme';
 
 export interface PlaygroundModalProps {
   visible: boolean;
@@ -25,12 +26,13 @@ export function PlaygroundModal({
   visible, onClose, code, onCodeChange, onRun, running, output, isError, accentColor,
 }: PlaygroundModalProps) {
   const insets = useSafeAreaInsets();
+  const C = useColors();
 
   const editorAndRun = (
-    <View style={styles.editorSection}>
-      <Text style={styles.colLabel}>КОД</Text>
+    <View style={s.editorSection}>
+      <Text style={[s.colLabel, { color: C.textMuted }]}>КОД</Text>
       <TextInput
-        style={styles.editor}
+        style={[s.editor, { color: C.codeText, backgroundColor: C.codeBg }]}
         value={code}
         onChangeText={onCodeChange}
         multiline
@@ -38,28 +40,28 @@ export function PlaygroundModal({
         autoCorrect={false}
         spellCheck={false}
         placeholder="# Напиши свій код тут..."
-        placeholderTextColor={COLORS.textMuted}
+        placeholderTextColor={C.textMuted}
         textAlignVertical="top"
       />
       <Pressable
-        style={[styles.runBtn, { backgroundColor: running ? '#333' : accentColor }]}
+        style={[s.runBtn, { backgroundColor: running ? '#333' : accentColor }]}
         onPress={onRun}
         disabled={running}
       >
         {running
           ? <ActivityIndicator color="#fff" size="small" />
-          : <Text style={styles.runTxt}>▶ Запустити</Text>}
+          : <Text style={s.runTxt}>▶ Запустити</Text>}
       </Pressable>
     </View>
   );
 
   const outputPane = (
-    <View style={[styles.outputSection, isError && styles.outputSectionErr]}>
-      <Text style={[styles.colLabel, isError && { color: COLORS.red }]}>
+    <View style={[s.outputSection, { backgroundColor: C.card }, isError && s.outputSectionErr]}>
+      <Text style={[s.colLabel, { color: isError ? C.red : C.textMuted }]}>
         {isError ? '✗ ПОМИЛКА' : '✓ ВИВІД'}
       </Text>
-      <ScrollView style={styles.outputScroll} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.outputTxt, isError && styles.outputTxtErr]}>
+      <ScrollView style={s.outputScroll} showsVerticalScrollIndicator={false}>
+        <Text style={[s.outputTxt, { color: isError ? C.red : C.green }]}>
           {output || 'Натисни ▶ Запустити…'}
         </Text>
       </ScrollView>
@@ -68,22 +70,22 @@ export function PlaygroundModal({
 
   const divider = (
     <View style={[
-      IS_WEB ? styles.vDivider : styles.hDivider,
-      { borderColor: isError ? COLORS.red + '66' : COLORS.border },
+      IS_WEB ? s.vDivider : s.hDivider,
+      { borderColor: isError ? C.red + '66' : C.border },
     ]} />
   );
 
   const header = (
-    <View style={styles.header}>
-      <Text style={styles.title}>🐍 Python Майданчик</Text>
-      <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={12}>
-        <Text style={styles.closeTxt}>✕ Закрити</Text>
+    <View style={[s.header, { backgroundColor: C.card, borderBottomColor: C.border }]}>
+      <Text style={[s.title, { color: C.text }]}>🐍 Python Майданчик</Text>
+      <Pressable style={[s.closeBtn, { backgroundColor: C.border }]} onPress={onClose} hitSlop={12}>
+        <Text style={[s.closeTxt, { color: C.textMuted }]}>✕ Закрити</Text>
       </Pressable>
     </View>
   );
 
   const body = (
-    <View style={[styles.body, IS_WEB && styles.bodyRow]}>
+    <View style={[s.body, IS_WEB && s.bodyRow]}>
       {editorAndRun}
       {divider}
       {outputPane}
@@ -93,8 +95,8 @@ export function PlaygroundModal({
   if (IS_WEB) {
     return (
       <Modal visible={visible} animationType="fade" onRequestClose={onClose} transparent>
-        <View style={styles.backdrop}>
-          <View style={styles.sheet}>
+        <View style={s.backdrop}>
+          <View style={[s.sheet, { backgroundColor: C.bg, borderColor: C.border }]}>
             {header}
             {body}
           </View>
@@ -105,8 +107,8 @@ export function PlaygroundModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView style={styles.root} behavior="padding">
-        <View style={[styles.root, { paddingTop: Math.max(insets.top, 16) }]}>
+      <KeyboardAvoidingView style={[s.root, { backgroundColor: C.bg }]} behavior="padding">
+        <View style={[s.root, { backgroundColor: C.bg, paddingTop: Math.max(insets.top, 16) }]}>
           {header}
           {body}
           <View style={{ height: Math.max(insets.bottom, 8) }} />
@@ -116,12 +118,8 @@ export function PlaygroundModal({
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
-  // Web only — backdrop + centered dialog
+const s = StyleSheet.create({
+  root: { flex: 1 },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',
@@ -133,10 +131,8 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 960,
     height: '85%',
-    backgroundColor: COLORS.bg,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
     overflow: 'hidden',
   },
   header: {
@@ -146,40 +142,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: 'rgba(255,255,255,0.03)',
   },
-  title: {
-    fontFamily: FONTS.bold,
-    fontSize: 16,
-    color: COLORS.text,
-  },
-  closeBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: RADIUS.sm,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  closeTxt: {
-    fontFamily: FONTS.bold,
-    fontSize: 13,
-    color: COLORS.textMuted,
-  },
-  body: {
-    flex: 1,
-    flexDirection: 'column',
-  },
-  bodyRow: {
-    flexDirection: 'row',
-  },
-  // Editor column — 60%
-  editorSection: {
-    flex: 6,
-  },
+  title: { fontFamily: FONTS.bold, fontSize: 16 },
+  closeBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: RADIUS.sm },
+  closeTxt: { fontFamily: FONTS.bold, fontSize: 13 },
+  body: { flex: 1, flexDirection: 'column' },
+  bodyRow: { flexDirection: 'row' },
+  editorSection: { flex: 6 },
   colLabel: {
     fontFamily: FONTS.bold,
     fontSize: 10,
-    color: COLORS.textMuted,
     letterSpacing: 1.5,
     paddingHorizontal: SPACING.md,
     paddingTop: 10,
@@ -189,11 +161,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: CODE_FONT,
     fontSize: 14,
-    color: '#c8d3f5',
     paddingHorizontal: SPACING.md,
     paddingTop: 4,
     lineHeight: 22,
-    backgroundColor: '#0a0818',
   },
   runBtn: {
     marginHorizontal: SPACING.md,
@@ -203,40 +173,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  runTxt: {
-    fontFamily: FONTS.bold,
-    fontSize: 15,
-    color: '#fff',
-  },
-  // Dividers
-  vDivider: {
-    width: 1,
-    borderLeftWidth: 1,
-  },
-  hDivider: {
-    height: 1,
-    borderTopWidth: 1,
-    marginHorizontal: SPACING.md,
-  },
-  // Output column — 40%
-  outputSection: {
-    flex: 4,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-  },
-  outputSectionErr: {
-    backgroundColor: 'rgba(239,68,68,0.06)',
-  },
-  outputScroll: {
-    flex: 1,
-  },
-  outputTxt: {
-    fontFamily: CODE_FONT,
-    fontSize: 13,
-    color: '#a3e635',
-    padding: SPACING.md,
-    lineHeight: 21,
-  },
-  outputTxtErr: {
-    color: COLORS.red,
-  },
+  runTxt: { fontFamily: FONTS.bold, fontSize: 15, color: '#fff' },
+  vDivider: { width: 1, borderLeftWidth: 1 },
+  hDivider: { height: 1, borderTopWidth: 1, marginHorizontal: SPACING.md },
+  outputSection: { flex: 4 },
+  outputSectionErr: { backgroundColor: 'rgba(239,68,68,0.06)' },
+  outputScroll: { flex: 1 },
+  outputTxt: { fontFamily: CODE_FONT, fontSize: 13, padding: SPACING.md, lineHeight: 21 },
 });

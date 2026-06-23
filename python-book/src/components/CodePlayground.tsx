@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
-import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
+import { useColors } from '../hooks/useColors';
+import { FONTS, RADIUS, SPACING } from '../theme';
 import { PlaygroundModal } from './PlaygroundModal';
 
 declare global {
@@ -61,6 +62,7 @@ interface Props {
 }
 
 export function CodePlayground({ initialCode, accentColor }: Props) {
+  const C = useColors();
   const [modalVisible, setModalVisible] = useState(false);
   const [code, setCode] = useState(initialCode);
   const [output, setOutput] = useState('');
@@ -74,7 +76,6 @@ export function CodePlayground({ initialCode, accentColor }: Props) {
     setRunning(true);
     setOutput('');
     setIsError(false);
-
     const result = await runPython(code);
     setRunning(false);
     setIsError(!result.ok);
@@ -83,25 +84,24 @@ export function CodePlayground({ initialCode, accentColor }: Props) {
 
   return (
     <>
-      {/* Compact card */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={[styles.dot, { backgroundColor: accentColor }]} />
-          <Text style={styles.cardTitle}>Python Майданчик</Text>
+      <View style={[s.card, { backgroundColor: C.surface, borderColor: C.border }]}>
+        <View style={[s.cardHeader, { backgroundColor: C.card, borderBottomColor: C.border }]}>
+          <View style={[s.dot, { backgroundColor: accentColor }]} />
+          <Text style={[s.cardTitle, { color: C.textMuted }]}>Python Майданчик</Text>
         </View>
 
-        <View style={styles.previewWrap}>
-          <Text style={styles.previewCode} numberOfLines={3}>{preview}</Text>
+        <View style={[s.previewWrap, { backgroundColor: C.codeBg }]}>
+          <Text style={[s.previewCode, { color: C.codeText, opacity: 0.55 }]} numberOfLines={3}>{preview}</Text>
           {initialCode.split('\n').length > 3 && (
-            <Text style={styles.previewMore}>…</Text>
+            <Text style={[s.previewMore, { color: C.textMuted }]}>…</Text>
           )}
         </View>
 
         <Pressable
-          style={[styles.openBtn, { backgroundColor: accentColor }]}
+          style={[s.openBtn, { backgroundColor: accentColor }]}
           onPress={() => setModalVisible(true)}
         >
-          <Text style={styles.openBtnTxt}>▶ Відкрити редактор</Text>
+          <Text style={s.openBtnTxt}>▶ Відкрити редактор</Text>
         </Pressable>
       </View>
 
@@ -120,15 +120,8 @@ export function CodePlayground({ initialCode, accentColor }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginTop: SPACING.xl,
-    overflow: 'hidden',
-  },
+const s = StyleSheet.create({
+  card: { borderRadius: RADIUS.lg, borderWidth: 1, marginTop: SPACING.xl, overflow: 'hidden' },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -136,45 +129,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: 'rgba(255,255,255,0.03)',
   },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  cardTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: 13,
-    color: COLORS.textMuted,
-  },
-  previewWrap: {
-    padding: SPACING.md,
-    backgroundColor: '#0a0818',
-    minHeight: 72,
-  },
-  previewCode: {
-    fontFamily: 'monospace',
-    fontSize: 13,
-    color: 'rgba(200,211,245,0.5)',
-    lineHeight: 22,
-  },
-  previewMore: {
-    fontFamily: 'monospace',
-    fontSize: 13,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
-  openBtn: {
-    margin: SPACING.md,
-    borderRadius: RADIUS.md,
-    paddingVertical: 13,
-    alignItems: 'center',
-  },
-  openBtnTxt: {
-    fontFamily: FONTS.bold,
-    fontSize: 15,
-    color: '#fff',
-  },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  cardTitle: { fontFamily: FONTS.bold, fontSize: 13 },
+  previewWrap: { padding: SPACING.md, minHeight: 72 },
+  previewCode: { fontFamily: 'monospace', fontSize: 13, lineHeight: 22 },
+  previewMore: { fontFamily: 'monospace', fontSize: 13, marginTop: 2 },
+  openBtn: { margin: SPACING.md, borderRadius: RADIUS.md, paddingVertical: 13, alignItems: 'center' },
+  openBtnTxt: { fontFamily: FONTS.bold, fontSize: 15, color: '#fff' },
 });

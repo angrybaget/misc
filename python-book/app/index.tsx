@@ -1,43 +1,44 @@
 import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GRADES } from '../src/data/grades';
 import { useProgress } from '../src/store/progress';
-import { COLORS, FONTS, RADIUS, SPACING } from '../src/theme';
-
-const { width } = Dimensions.get('window');
-const CARD_W = (width - SPACING.md * 2 - 12) / 2;
+import { useColors } from '../src/hooks/useColors';
+import { FONTS, RADIUS, SPACING } from '../src/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { totalDone } = useProgress();
   const done = totalDone();
+  const C = useColors();
+  const { width } = useWindowDimensions();
+  const CARD_W = (width - SPACING.md * 2 - 12) / 2;
 
   return (
-    <View style={styles.bg}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <View style={[s.bg, { backgroundColor: C.bg }]}>
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <Animated.View entering={FadeIn.duration(600)}>
           <LinearGradient
-            colors={['#3730a3', '#1e1b4b', '#0d0b21']}
-            style={styles.header}
+            colors={[C.accent, C.accent + 'bb', C.bg]}
+            style={s.header}
           >
-            <Text style={styles.flagRow}>🇺🇦</Text>
-            <Text style={styles.title}>Навчайся{'\n'}разом з нами</Text>
-            <Text style={styles.subtitle}>НУШ · 5–9 клас · 2025–2026</Text>
+            <Text style={s.flagRow}>🇺🇦</Text>
+            <Text style={[s.title, { color: '#fff' }]}>Навчайся{'\n'}разом з нами</Text>
+            <Text style={s.subtitle}>НУШ · 5–9 клас · 2025–2026</Text>
             {done > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>✓ {done} уроків завершено</Text>
+              <View style={[s.badge, { backgroundColor: C.green + '33', borderColor: C.green + '66' }]}>
+                <Text style={[s.badgeText, { color: C.green }]}>✓ {done} уроків завершено</Text>
               </View>
             )}
           </LinearGradient>
         </Animated.View>
 
         {/* Grade cards */}
-        <Text style={styles.sectionTitle}>Обери клас</Text>
-        <View style={styles.grid}>
+        <Text style={[s.sectionTitle, { color: C.text }]}>Обери клас</Text>
+        <View style={s.grid}>
           {GRADES.map((grade, i) => (
             <Animated.View
               key={grade.id}
@@ -45,18 +46,18 @@ export default function HomeScreen() {
               style={{ width: CARD_W }}
             >
               <Pressable
-                style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
+                style={({ pressed }) => [s.card, { borderColor: C.border }, pressed && { opacity: 0.85 }]}
                 onPress={() => router.push(`/grade/${grade.id}` as any)}
               >
                 <LinearGradient
                   colors={[grade.color + 'cc', grade.color + '44', 'transparent']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.cardGrad}
+                  style={s.cardGrad}
                 >
-                  <Text style={styles.cardEmoji}>{grade.emoji}</Text>
-                  <Text style={styles.cardLabel}>{grade.label}</Text>
-                  <Text style={styles.cardSubs}>
+                  <Text style={s.cardEmoji}>{grade.emoji}</Text>
+                  <Text style={[s.cardLabel, { color: C.text }]}>{grade.label}</Text>
+                  <Text style={s.cardSubs}>
                     {grade.subjects.length} предмет{grade.subjects.length > 1 ? 'и' : ''}
                   </Text>
                 </LinearGradient>
@@ -69,11 +70,11 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: COLORS.bg },
+const s = StyleSheet.create({
+  bg: { flex: 1 },
   scroll: { paddingBottom: SPACING.xxl },
   header: {
-    paddingTop: 64,
+    paddingTop: 72,
     paddingBottom: SPACING.xl,
     paddingHorizontal: SPACING.md,
     alignItems: 'center',
@@ -82,14 +83,13 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: FONTS.extraBold,
     fontSize: 34,
-    color: COLORS.text,
     textAlign: 'center',
     lineHeight: 42,
   },
   subtitle: {
     fontFamily: FONTS.regular,
     fontSize: 13,
-    color: COLORS.textMuted,
+    color: 'rgba(255,255,255,0.75)',
     marginTop: 8,
     letterSpacing: 1,
     textTransform: 'uppercase',
@@ -99,19 +99,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: 'rgba(16,185,129,0.2)',
     borderWidth: 1,
-    borderColor: COLORS.green + '66',
   },
-  badgeText: {
-    fontFamily: FONTS.bold,
-    fontSize: 13,
-    color: COLORS.green,
-  },
+  badgeText: { fontFamily: FONTS.bold, fontSize: 13 },
   sectionTitle: {
     fontFamily: FONTS.bold,
     fontSize: 13,
-    color: COLORS.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     paddingHorizontal: SPACING.md,
@@ -128,7 +121,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   cardGrad: {
     padding: SPACING.md,
@@ -136,11 +128,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   cardEmoji: { fontSize: 40, marginBottom: SPACING.sm },
-  cardLabel: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 22,
-    color: COLORS.text,
-  },
+  cardLabel: { fontFamily: FONTS.extraBold, fontSize: 22 },
   cardSubs: {
     fontFamily: FONTS.regular,
     fontSize: 12,
