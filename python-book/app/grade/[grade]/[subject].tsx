@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SUBJECTS } from '../../../src/data/subjects';
-import { getContent } from '../../../src/data/curriculum';
+import { useSubjectContent } from '../../../src/hooks/useSubjectContent';
 import { useProgress } from '../../../src/store/progress';
 import { useColors } from '../../../src/hooks/useColors';
 import { GradeId, SubjectId } from '../../../src/data/types';
@@ -18,10 +18,16 @@ export default function SubjectScreen() {
   const subjectId = subject as SubjectId;
 
   const subjectDef = SUBJECTS[subjectId];
-  const content = getContent(gradeId, subjectId);
+  const { data: content, loading } = useSubjectContent(gradeId, subjectId);
   const { isDone, countDone } = useProgress();
 
-  if (!content || !subjectDef) return null;
+  if (!subjectDef) return null;
+  if (loading) return (
+    <View style={[s.bg, { backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }]}>
+      <Text style={{ fontFamily: FONTS.regular, color: C.textMuted, fontSize: 16 }}>Завантаження…</Text>
+    </View>
+  );
+  if (!content) return null;
 
   const done = countDone(gradeId, subjectId);
   const total = content.lessons.length;

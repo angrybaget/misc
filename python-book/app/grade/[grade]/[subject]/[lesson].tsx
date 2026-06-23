@@ -8,7 +8,7 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { SUBJECTS } from '../../../../src/data/subjects';
-import { getContent } from '../../../../src/data/curriculum';
+import { useSubjectContent } from '../../../../src/hooks/useSubjectContent';
 import { useProgress } from '../../../../src/store/progress';
 import { useLessonEditsStore, makeLessonKey } from '../../../../src/store/lessonEdits';
 import { useShake } from '../../../../src/hooks/useShake';
@@ -32,7 +32,7 @@ export default function LessonScreen() {
   const lKey = makeLessonKey(gradeId, subjectId, lessonId);
 
   const subjectDef = SUBJECTS[subjectId];
-  const content = getContent(gradeId, subjectId);
+  const { data: content, loading } = useSubjectContent(gradeId, subjectId);
   const lessonData = content?.lessons.find((l) => l.id === lessonId);
 
   const blockOverride = useLessonEditsStore((s) => s.overrides[lKey]);
@@ -56,6 +56,13 @@ export default function LessonScreen() {
 
   useShake(celebrate);
 
+  if (loading) {
+    return (
+      <View style={[s.bg, { backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }]}>
+        <Text style={[s.notFound, { color: C.textMuted }]}>Завантаження…</Text>
+      </View>
+    );
+  }
   if (!lessonData || !subjectDef || !content) {
     return (
       <View style={[s.bg, { backgroundColor: C.bg }]}>

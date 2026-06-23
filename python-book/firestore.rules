@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == '309science28@gmail.com';
+    }
+
+    // Lesson content — public read, admin write
+    match /lessons/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /items/{itemId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+  }
+}
