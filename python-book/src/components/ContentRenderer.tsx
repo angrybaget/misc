@@ -9,6 +9,8 @@ import { FillInBlock } from './FillInBlock';
 
 const CODE_FONT = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
 
+// ─── Inline text with **bold** and `code` ────────────────────────────────────
+
 function InlineText({ text, style }: { text: string; style?: object }) {
   const C = useColors();
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
@@ -29,21 +31,38 @@ function InlineText({ text, style }: { text: string; style?: object }) {
   );
 }
 
+// ─── H3 — accent left bar ────────────────────────────────────────────────────
+
 function BlockH3({ text }: { text: string }) {
   const C = useColors();
-  return <Text style={[s.h3, { color: C.text }]}>{text}</Text>;
+  return (
+    <View style={[s.h3Wrap, { borderLeftColor: C.accent }]}>
+      <Text style={[s.h3, { color: C.text }]}>{text}</Text>
+    </View>
+  );
 }
+
+// ─── Paragraph ───────────────────────────────────────────────────────────────
 
 function BlockP({ text }: { text: string }) {
   const C = useColors();
   return <InlineText text={text} style={[s.p, { color: C.text }]} />;
 }
 
+// ─── Code block — macOS-style header ─────────────────────────────────────────
+
 function BlockCode({ text }: { text: string }) {
   const C = useColors();
   return (
-    <View style={[s.codeBlock, { backgroundColor: C.codeBg, borderColor: C.border }]}>
-      <Text style={[s.codeLabel, { color: C.accent, backgroundColor: C.codeLabelBg }]}>код</Text>
+    <View style={[s.codeWrap, { backgroundColor: C.codeBg, borderColor: C.border }]}>
+      <View style={[s.codeHeader, { backgroundColor: C.codeLabelBg }]}>
+        <View style={s.codeDots}>
+          <View style={[s.codeDot, s.dotRed]} />
+          <View style={[s.codeDot, s.dotYellow]} />
+          <View style={[s.codeDot, s.dotGreen]} />
+        </View>
+        <Text style={[s.codeLabel, { color: C.accent }]}>КОД</Text>
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <Text style={[s.code, { color: C.codeText }]}>{text}</Text>
       </ScrollView>
@@ -51,49 +70,110 @@ function BlockCode({ text }: { text: string }) {
   );
 }
 
+// ─── Callout — semi-transparent, theme-aware ─────────────────────────────────
+
+const CALLOUT_CONFIG = {
+  tip:     { accent: '#10b981', label: 'Порада',    icon: '💡' },
+  note:    { accent: '#3b82f6', label: 'Примітка',  icon: '📘' },
+  warning: { accent: '#f59e0b', label: 'Увага',     icon: '⚠️' },
+} as const;
+
 function BlockCallout({ variant, text }: { variant: 'tip' | 'note' | 'warning'; text: string }) {
-  const config = {
-    tip:     { bg: '#052e16', border: '#10b981', color: '#6ee7b7', icon: '💡 Порада' },
-    note:    { bg: '#0c1a3d', border: '#3b82f6', color: '#93c5fd', icon: '📝 Примітка' },
-    warning: { bg: '#2d1500', border: '#f59e0b', color: '#fcd34d', icon: '⚠️ Увага' },
-  }[variant];
+  const C = useColors();
+  const { accent, label, icon } = CALLOUT_CONFIG[variant];
   return (
-    <View style={[s.callout, { backgroundColor: config.bg, borderLeftColor: config.border }]}>
-      <Text style={[s.calloutTitle, { color: config.color }]}>{config.icon}</Text>
-      <Text style={[s.calloutBody, { color: config.color }]}>{text}</Text>
+    <View style={[s.callout, { borderLeftColor: accent, backgroundColor: accent + '12' }]}>
+      <View style={s.calloutHead}>
+        <View style={[s.calloutIconWrap, { backgroundColor: accent + '28' }]}>
+          <Text style={s.calloutIcon}>{icon}</Text>
+        </View>
+        <Text style={[s.calloutLabel, { color: accent }]}>{label.toUpperCase()}</Text>
+      </View>
+      <Text style={[s.calloutBody, { color: C.text }]}>{text}</Text>
     </View>
   );
 }
 
+// ─── Table — aligned columns via flex ────────────────────────────────────────
+// Each cell uses flex:1 so every column in every row has the same width.
+// No per-cell content sizing → headers and body always align perfectly.
+
 function BlockTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
   const C = useColors();
+  const n = headers.length;
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.tableScroll}>
-      <View>
-        <View style={[s.tableRow, { backgroundColor: C.accentSoft, borderBottomColor: C.border }]}>
-          {headers.map((h, i) => (
-            <Text key={i} style={[s.tableCell, s.tableHeadCell, { color: C.text }]}>{h}</Text>
-          ))}
-        </View>
-        {rows.map((row, ri) => (
-          <View key={ri} style={[s.tableRow, { borderBottomColor: C.border }, ri % 2 === 1 && { backgroundColor: C.card }]}>
-            {row.map((cell, ci) => (
-              <Text key={ci} style={[s.tableCell, { color: C.text }]}>{cell}</Text>
-            ))}
+    <View style={[s.tableWrap, { borderColor: C.border }]}>
+      {/* Header */}
+      <View style={[s.tableHead, { backgroundColor: C.accent }]}>
+        {headers.map((h, i) => (
+          <View
+            key={i}
+            style={[
+              s.tHeadCell,
+              i < n - 1 && { borderRightWidth: 1, borderRightColor: 'rgba(255,255,255,0.18)' },
+            ]}
+          >
+            <Text style={s.tHeadTxt}>{h}</Text>
           </View>
         ))}
       </View>
-    </ScrollView>
+      {/* Body rows */}
+      {rows.map((row, ri) => (
+        <View
+          key={ri}
+          style={[
+            s.tableRow,
+            { borderBottomColor: C.border },
+            ri % 2 === 1 && { backgroundColor: C.card },
+            ri === rows.length - 1 && { borderBottomWidth: 0 },
+          ]}
+        >
+          {row.map((cell, ci) => (
+            <View
+              key={ci}
+              style={[
+                s.tBodyCell,
+                ci < n - 1 && { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.border },
+              ]}
+            >
+              <Text style={[s.tCellTxt, { color: C.text }, ci === 0 && { fontFamily: FONTS.bold }]}>
+                {cell}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ))}
+    </View>
   );
 }
+
+// ─── List — circle dots ───────────────────────────────────────────────────────
+
+function BlockList({ items }: { items: string[] }) {
+  const C = useColors();
+  return (
+    <View style={s.listBlock}>
+      {items.map((item, i) => (
+        <View key={i} style={s.listItem}>
+          <View style={[s.listDot, { backgroundColor: C.accent }]} />
+          <InlineText text={item} style={[s.listText, { color: C.text }]} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ─── Image — caption strip ────────────────────────────────────────────────────
 
 function BlockImage({ uri, caption }: { uri: string; caption: string }) {
   const C = useColors();
   const [error, setError] = useState(false);
   return (
-    <View style={[s.imgWrap, { backgroundColor: C.card, borderColor: C.border }]}>
+    <View style={[s.imgWrap, { borderColor: C.border, backgroundColor: C.card }]}>
       {error ? (
-        <Text style={[s.imgError, { color: C.textMuted }]}>🖼️ Зображення недоступне</Text>
+        <View style={s.imgErrWrap}>
+          <Text style={[s.imgErrTxt, { color: C.textMuted }]}>🖼️  Зображення недоступне</Text>
+        </View>
       ) : (
         <Image
           source={{ uri }}
@@ -102,24 +182,16 @@ function BlockImage({ uri, caption }: { uri: string; caption: string }) {
           onError={() => setError(true)}
         />
       )}
-      {!!caption && <Text style={[s.imgCaption, { color: C.textMuted }]}>{caption}</Text>}
+      {!!caption && (
+        <View style={[s.imgCaptionWrap, { borderTopColor: C.border, backgroundColor: C.surface }]}>
+          <Text style={[s.imgCaption, { color: C.textMuted }]}>{caption}</Text>
+        </View>
+      )}
     </View>
   );
 }
 
-function BlockList({ items }: { items: string[] }) {
-  const C = useColors();
-  return (
-    <View style={s.listBlock}>
-      {items.map((item, i) => (
-        <View key={i} style={s.listItem}>
-          <Text style={[s.bullet, { color: C.accent }]}>•</Text>
-          <InlineText text={item} style={[s.listText, { color: C.text }]} />
-        </View>
-      ))}
-    </View>
-  );
-}
+// ─── Renderer ────────────────────────────────────────────────────────────────
 
 export function ContentRenderer({ blocks }: { blocks: Block[] }) {
   return (
@@ -145,35 +217,160 @@ export function ContentRenderer({ blocks }: { blocks: Block[] }) {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const s = StyleSheet.create({
-  h3: { fontFamily: FONTS.extraBold, fontSize: 20, marginTop: SPACING.lg, marginBottom: SPACING.sm },
-  p: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 24, marginBottom: SPACING.sm },
+  // ── inline ──
   bold: { fontFamily: FONTS.bold },
   inlineCode: { fontFamily: CODE_FONT, fontSize: 13, borderRadius: 4 },
-  codeBlock: { borderRadius: RADIUS.md, overflow: 'hidden', marginVertical: SPACING.sm, borderWidth: 1 },
-  codeLabel: {
-    fontFamily: FONTS.regular,
-    fontSize: 11,
+
+  // ── h3 ──
+  h3Wrap: {
+    borderLeftWidth: 3,
+    paddingLeft: 12,
+    marginTop: SPACING.lg,
+    marginBottom: 10,
+  },
+  h3: { fontFamily: FONTS.extraBold, fontSize: 19 },
+
+  // ── p ──
+  p: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 24, marginBottom: SPACING.sm },
+
+  // ── code ──
+  codeWrap: {
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+    marginVertical: SPACING.sm,
+    borderWidth: 1,
+  },
+  codeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    letterSpacing: 0.5,
+    paddingVertical: 8,
+    gap: 12,
+  },
+  codeDots: { flexDirection: 'row', gap: 5 },
+  codeDot: { width: 10, height: 10, borderRadius: 5 },
+  dotRed:    { backgroundColor: '#ff5f57' },
+  dotYellow: { backgroundColor: '#febc2e' },
+  dotGreen:  { backgroundColor: '#28c840' },
+  codeLabel: {
+    fontFamily: FONTS.bold,
+    fontSize: 10,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   code: { fontFamily: CODE_FONT, fontSize: 13, padding: SPACING.md, lineHeight: 22 },
-  callout: { borderLeftWidth: 4, borderRadius: RADIUS.sm, padding: SPACING.md, marginVertical: SPACING.sm },
-  calloutTitle: { fontFamily: FONTS.bold, fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
-  calloutBody: { fontFamily: FONTS.regular, fontSize: 14, lineHeight: 22 },
-  tableScroll: { marginVertical: SPACING.sm },
-  tableRow: { flexDirection: 'row', borderBottomWidth: 1 },
-  tableCell: { fontFamily: CODE_FONT, fontSize: 12, padding: 10, minWidth: 100, maxWidth: 240 },
-  tableHeadCell: { fontFamily: FONTS.bold, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
+
+  // ── callout ──
+  callout: {
+    borderLeftWidth: 5,
+    borderRadius: RADIUS.md,
+    marginVertical: SPACING.sm,
+    overflow: 'hidden',
+  },
+  calloutHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: SPACING.md,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  calloutIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calloutIcon: { fontSize: 14 },
+  calloutLabel: {
+    fontFamily: FONTS.bold,
+    fontSize: 11,
+    letterSpacing: 1.3,
+  },
+  calloutBody: {
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    lineHeight: 22,
+    paddingHorizontal: SPACING.md,
+    paddingBottom: 14,
+  },
+
+  // ── table ──
+  tableWrap: {
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginVertical: SPACING.sm,
+  },
+  tableHead: { flexDirection: 'row' },
+  tHeadCell: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  tHeadTxt: {
+    fontFamily: FONTS.bold,
+    fontSize: 11,
+    color: '#fff',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  tBodyCell: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  tCellTxt: {
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+
+  // ── list ──
   listBlock: { marginVertical: SPACING.sm },
-  listItem: { flexDirection: 'row', gap: 8, marginBottom: 6 },
-  bullet: { fontSize: 16, lineHeight: 24 },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 8,
+  },
+  listDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    marginTop: 9,
+    flexShrink: 0,
+  },
   listText: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 24, flex: 1 },
-  // image block
-  imgWrap: { borderRadius: RADIUS.md, borderWidth: 1, marginVertical: SPACING.sm, overflow: 'hidden' },
-  img: { width: '100%', height: 200 },
-  imgError: { fontFamily: FONTS.regular, fontSize: 13, padding: SPACING.md, textAlign: 'center' },
-  imgCaption: { fontFamily: FONTS.regular, fontSize: 12, textAlign: 'center', padding: SPACING.sm, fontStyle: 'italic' },
+
+  // ── image ──
+  imgWrap: {
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    marginVertical: SPACING.sm,
+    overflow: 'hidden',
+  },
+  img: { width: '100%', height: 220 },
+  imgErrWrap: { height: 100, alignItems: 'center', justifyContent: 'center' },
+  imgErrTxt: { fontFamily: FONTS.regular, fontSize: 13 },
+  imgCaptionWrap: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 10,
+  },
+  imgCaption: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    lineHeight: 18,
+  },
 });
