@@ -7,6 +7,8 @@ import {
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
+const ADMIN_EMAIL = '309science28@gmail.com';
+
 interface AdminStore {
   user: User | null;
   loading: boolean;
@@ -36,5 +38,6 @@ export const useAdminStore = create<AdminStore>((set) => ({
     set({ user: null });
   },
 
-  init: () => onAuthStateChanged(auth, (user) => set({ user, loading: false })),
+  init: () => onAuthStateChanged(auth, (user) =>
+    set({ user: user?.email === ADMIN_EMAIL ? user : null, loading: false })),
 }));

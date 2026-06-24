@@ -7,6 +7,11 @@ service cloud.firestore {
         && request.auth.token.email == '309science28@gmail.com';
     }
 
+    // Per-user progress — only the owner can read/write
+    match /userProgress/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
     // Lesson content — public read, admin write
     match /lessons/{docId} {
       allow read: if true;

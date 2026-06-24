@@ -252,5 +252,37 @@ echo "✅ Deployed!"
 echo "   https://${SITE}.web.app"
 echo "   https://${SITE}.firebaseapp.com"
 
-# ── 7. Email notification ─────────────────────────────────────────────────────
+# ── 7. Deploy Firestore rules ─────────────────────────────────────────────────
+echo "▶ Deploying Firestore rules..."
+python3 - <<PYEOF
+import json, urllib.request
+
+token = """${TOKEN}"""
+project = "${PROJECT}"
+
+with open("firestore.rules") as f:
+    rules = f.read()
+
+def call(url, data, method="POST"):
+    req = urllib.request.Request(url, json.dumps(data).encode(), method=method)
+    req.add_header("Authorization", f"Bearer {token}")
+    req.add_header("Content-Type", "application/json")
+    with urllib.request.urlopen(req) as r:
+        return json.loads(r.read())
+
+resp = call(
+    f"https://firebaserules.googleapis.com/v1/projects/{project}/rulesets",
+    {"source": {"files": [{"name": "firestore.rules", "content": rules}]}}
+)
+ruleset_name = resp["name"]
+
+call(
+    f"https://firebaserules.googleapis.com/v1/projects/{project}/releases/cloud.firestore",
+    {"release": {"name": f"projects/{project}/releases/cloud.firestore", "rulesetName": ruleset_name}},
+    method="PATCH"
+)
+print("  Firestore rules deployed ✓")
+PYEOF
+
+# ── 8. Email notification ─────────────────────────────────────────────────────
 send_email "✅ Успіх" "Деплой завершено${DEPLOY_VERSION:+ (${DEPLOY_VERSION})}. <a href='https://${SITE}.web.app'>https://${SITE}.web.app</a>"

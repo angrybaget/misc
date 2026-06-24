@@ -1,7 +1,7 @@
 import {
   collection, doc, getDocs, getDoc,
   setDoc, updateDoc, deleteDoc,
-  query, orderBy,
+  arrayUnion, query, orderBy,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Block, Lesson, SubjectContent, GradeId, SubjectId } from '../data/types';
@@ -83,6 +83,23 @@ export async function deleteLesson(
 ): Promise<void> {
   await deleteDoc(doc(lessonsCol(gradeId, subjectId), String(lessonId)));
 }
+
+// ── User progress ────────────────────────────────────────────────────────────
+
+export async function loadUserProgress(userId: string): Promise<string[]> {
+  const snap = await getDoc(doc(db, 'userProgress', userId));
+  return snap.exists() ? (snap.data().completed as string[] ?? []) : [];
+}
+
+export async function addUserProgressEntry(userId: string, key: string): Promise<void> {
+  await setDoc(
+    doc(db, 'userProgress', userId),
+    { completed: arrayUnion(key) },
+    { merge: true },
+  );
+}
+
+// ── Admin writes (require auth) — lesson meta ────────────────────────────────
 
 export async function updateLessonMeta(
   gradeId: GradeId,

@@ -9,11 +9,12 @@ import { GRADES } from '../data/grades';
 import { COLOR_SCHEMES } from '../data/themes';
 import { useThemeStore } from '../store/theme';
 import { useAdminStore } from '../store/admin';
+import { useUserStore } from '../store/user';
 import { useColors } from '../hooks/useColors';
-import Constants from 'expo-constants';
 import { FONTS, RADIUS, SPACING } from '../theme';
+import pkg from '../../package.json';
 
-const APP_VERSION = `v${Constants.expoConfig?.version ?? '?'}`;
+const APP_VERSION = `v${pkg.version}`;
 
 const DRAWER_W = 264;
 const HEADER_H = 52;
@@ -24,7 +25,8 @@ function NavContent({ onClose }: { onClose?: () => void }) {
   const router = useRouter();
   const C = useColors();
   const { schemeId, setScheme } = useThemeStore();
-  const { user } = useAdminStore();
+  const { user: adminUser } = useAdminStore();
+  const { user: studentUser, signInWithGoogle, signOut: signOutStudent } = useUserStore();
   const insets = useSafeAreaInsets();
 
   function go(path: string) {
@@ -63,17 +65,43 @@ function NavContent({ onClose }: { onClose?: () => void }) {
         ))}
       </View>
 
+      {/* Student auth */}
+      <Text style={[nav.label, { color: C.textMuted }]}>АКАУНТ</Text>
+      {studentUser ? (
+        <View style={nav.item}>
+          <View style={[nav.gradeCircle, { backgroundColor: '#10B98120', borderColor: '#10B98188' }]}>
+            <Text style={{ fontSize: 14 }}>👤</Text>
+          </View>
+          <Text style={[nav.itemTxt, { color: C.text }]} numberOfLines={1}>
+            {studentUser.displayName ?? studentUser.email}
+          </Text>
+          <Pressable onPress={signOutStudent} hitSlop={8}>
+            <Text style={[nav.closeTxt, { color: C.textMuted }]}>Вийти</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable
+          style={({ pressed }) => [nav.item, pressed && { opacity: 0.7 }]}
+          onPress={signInWithGoogle}
+        >
+          <View style={[nav.gradeCircle, { backgroundColor: '#4285F420', borderColor: '#4285F488' }]}>
+            <Text style={{ fontSize: 14 }}>G</Text>
+          </View>
+          <Text style={[nav.itemTxt, { color: C.text }]}>Увійти через Google</Text>
+        </Pressable>
+      )}
+
       {/* Admin link */}
       <Text style={[nav.label, { color: C.textMuted }]}>АДМІН</Text>
       <Pressable
         style={({ pressed }) => [nav.item, pressed && { opacity: 0.7 }]}
-        onPress={() => go(user ? '/admin/dashboard' : '/admin')}
+        onPress={() => go(adminUser ? '/admin/dashboard' : '/admin')}
       >
         <View style={[nav.gradeCircle, { backgroundColor: '#4F46E520', borderColor: '#4F46E588' }]}>
-          <Text style={{ fontSize: 14 }}>{user ? '⚙️' : '🔐'}</Text>
+          <Text style={{ fontSize: 14 }}>{adminUser ? '⚙️' : '🔐'}</Text>
         </View>
         <Text style={[nav.itemTxt, { color: C.text }]}>
-          {user ? 'Панель керування' : 'Вхід для вчителя'}
+          {adminUser ? 'Панель керування' : 'Вхід для вчителя'}
         </Text>
       </Pressable>
 
@@ -106,7 +134,8 @@ function WideHeader() {
   const router = useRouter();
   const C = useColors();
   const { schemeId, setScheme } = useThemeStore();
-  const { user } = useAdminStore();
+  const { user: adminUser } = useAdminStore();
+  const { user: studentUser, signInWithGoogle, signOut: signOutStudent } = useUserStore();
   const insets = useSafeAreaInsets();
 
   return (
@@ -141,13 +170,32 @@ function WideHeader() {
             ]} />
           </Pressable>
         ))}
+        {studentUser ? (
+          <Pressable
+            onPress={signOutStudent}
+            style={({ pressed }) => [wide.adminBtn, { backgroundColor: '#10B98118', borderColor: '#10B98188' }, pressed && { opacity: 0.7 }]}
+            hitSlop={6}
+          >
+            <Text style={[wide.adminTxt, { color: C.text }]} numberOfLines={1}>
+              👤 {studentUser.displayName?.split(' ')[0] ?? 'Акаунт'}
+            </Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={signInWithGoogle}
+            style={({ pressed }) => [wide.adminBtn, { backgroundColor: '#4285F418', borderColor: '#4285F488' }, pressed && { opacity: 0.7 }]}
+            hitSlop={6}
+          >
+            <Text style={[wide.adminTxt, { color: C.text }]}>G Увійти</Text>
+          </Pressable>
+        )}
         <Pressable
-          onPress={() => router.push((user ? '/admin/dashboard' : '/admin') as any)}
+          onPress={() => router.push((adminUser ? '/admin/dashboard' : '/admin') as any)}
           style={({ pressed }) => [wide.adminBtn, { backgroundColor: C.surface, borderColor: C.border }, pressed && { opacity: 0.7 }]}
           hitSlop={6}
         >
           <Text style={[wide.adminTxt, { color: C.text }]}>
-            {user ? '⚙️ Адмін' : '🔐 Вхід'}
+            {adminUser ? '⚙️ Адмін' : '🔐 Вхід'}
           </Text>
         </Pressable>
       </View>

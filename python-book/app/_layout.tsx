@@ -11,6 +11,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { AppShell } from '../src/components/AppShell';
 import { useThemeStore } from '../src/store/theme';
+import { useUserStore } from '../src/store/user';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,6 +33,9 @@ export default function RootLayout() {
 
 function ThemedApp() {
   const { colors } = useThemeStore();
+  const { init: initUser } = useUserStore();
+
+  useEffect(() => initUser(), []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
