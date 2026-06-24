@@ -265,6 +265,4 @@ echo "   https://${SITE}.web.app"
 echo "   https://${SITE}.firebaseapp.com"
 
 # ── 7. Email notification ─────────────────────────────────────────────────────
-VERSION_LABEL="${DEPLOY_VERSION:-}"
-VERSION_SUFFIX="${VERSION_LABEL:+ (${VERSION_LABEL})}"
-send_email "✅ Успіх" "Деплой завершено${VERSION_SUFFIX}. <a href='https://${SITE}.web.app'>https://${SITE}.web.app</a>"
+send_email "✅ Успіх" "Деплой завершено${DEPLOY_VERSION:+ (${DEPLOY_VERSION})}. <a href='https://${SITE}.web.app'>https://${SITE}.web.app</a>"

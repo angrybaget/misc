@@ -2,13 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { QuizBlock } from '../components/QuizBlock';
 
-jest.mock('../hooks/useColors', () => ({
-  useColors: () => ({
-    surface: '#fff', card: '#eee', border: '#ddd', text: '#000', textMuted: '#888',
-    accent: '#6366f1', accentSoft: '#e0e0fd', green: '#059669', red: '#dc2626',
-    codeBg: '#000', codeText: '#fff', codeLabelBg: '#111',
-  }),
-}));
+jest.mock('../hooks/useColors');
 
 const PROPS = {
   question: 'Яка команда виводить текст?',

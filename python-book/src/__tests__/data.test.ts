@@ -91,14 +91,14 @@ describe('ALL_CONTENT', () => {
   });
 
   it('every block has a valid type', () => {
-    const VALID_TYPES: Block['type'][] = [
+    const VALID_TYPES = new Set<Block['type']>([
       'h3', 'p', 'code', 'tip', 'note', 'warning',
       'list', 'table', 'quiz', 'quiz-multi', 'fill', 'image',
-    ];
+    ]);
     for (const c of ALL_CONTENT) {
       for (const lesson of c.lessons) {
         for (const block of lesson.blocks) {
-          expect(VALID_TYPES).toContain(block.type);
+          expect(VALID_TYPES.has(block.type)).toBe(true);
         }
       }
     }

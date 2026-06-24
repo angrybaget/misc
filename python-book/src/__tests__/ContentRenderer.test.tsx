@@ -3,13 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { ContentRenderer } from '../components/ContentRenderer';
 import type { Block } from '../data/types';
 
-jest.mock('../hooks/useColors', () => ({
-  useColors: () => ({
-    surface: '#fff', card: '#eee', border: '#ddd', text: '#000', textMuted: '#888',
-    accent: '#6366f1', accentSoft: '#e0e0fd', green: '#059669', red: '#dc2626',
-    codeBg: '#0d0b1e', codeText: '#c8d3f5', codeLabelBg: '#13113a',
-  }),
-}));
+jest.mock('../hooks/useColors');
 
 // ImageViewer uses gestures + reanimated — stub it out
 jest.mock('../components/ImageViewer', () => ({
