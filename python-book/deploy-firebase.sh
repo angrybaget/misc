@@ -16,6 +16,7 @@ SITE="school28-d2877"
 TO_EMAIL="pulseupbass@gmail.com"
 START_TIME=$(date '+%Y-%m-%d %H:%M:%S')
 BUILD_MODE="${1:-}"
+DEPLOY_VERSION=""
 
 # ── Email helper (Node.js + Resend) ─────────────────────────────────────────
 send_email() {
@@ -128,8 +129,21 @@ echo "▶ Running tests..."
 npm test
 echo "  Tests passed ✓"
 
-# ── 2. Build ─────────────────────────────────────────────────────────────────
+# ── 2. Bump version + Build ───────────────────────────────────────────────────
 if [[ "$BUILD_MODE" != "--no-build" ]]; then
+  echo "▶ Bumping version..."
+  DEPLOY_VERSION=$(node -e "
+const fs = require('fs');
+const file = 'src/version.ts';
+const src = fs.readFileSync(file, 'utf8');
+const m = src.match(/v(\d+)\.(\d+)/);
+if (!m) { process.stderr.write('Version not found in ' + file + '\n'); process.exit(1); }
+const next = 'v' + m[1] + '.' + (parseInt(m[2]) + 1);
+fs.writeFileSync(file, src.replace(/v\d+\.\d+/, next));
+process.stdout.write(next);
+")
+  echo "  version: ${DEPLOY_VERSION}"
+
   echo "▶ Building..."
   npx expo export --platform web
 fi
@@ -251,4 +265,6 @@ echo "   https://${SITE}.web.app"
 echo "   https://${SITE}.firebaseapp.com"
 
 # ── 7. Email notification ─────────────────────────────────────────────────────
-send_email "✅ Успіх" "Деплой завершено. <a href='https://${SITE}.web.app'>https://${SITE}.web.app</a>"
+VERSION_LABEL="${DEPLOY_VERSION:-}"
+VERSION_SUFFIX="${VERSION_LABEL:+ (${VERSION_LABEL})}"
+send_email "✅ Успіх" "Деплой завершено${VERSION_SUFFIX}. <a href='https://${SITE}.web.app'>https://${SITE}.web.app</a>"

@@ -11,6 +11,7 @@ import { useThemeStore } from '../store/theme';
 import { useAdminStore } from '../store/admin';
 import { useColors } from '../hooks/useColors';
 import { FONTS, RADIUS, SPACING } from '../theme';
+import { APP_VERSION } from '../version';
 
 const DRAWER_W = 264;
 const HEADER_H = 52;
@@ -92,6 +93,7 @@ function NavContent({ onClose }: { onClose?: () => void }) {
           );
         })}
         <View style={{ height: Math.max(insets.bottom, SPACING.md) }} />
+        <Text style={[nav.version, { color: C.textMuted }]}>{APP_VERSION}</Text>
       </View>
     </View>
   );
@@ -112,6 +114,7 @@ function WideHeader() {
     ]}>
       <Pressable onPress={() => router.push('/')} style={wide.logoBtn}>
         <Text style={[wide.logoTxt, { color: C.accent }]}>🇺🇦 НУШ</Text>
+        <Text style={[wide.versionTxt, { color: C.textMuted }]}>{APP_VERSION}</Text>
       </Pressable>
 
       <View style={wide.grades}>
@@ -246,6 +249,13 @@ const nav = StyleSheet.create({
   themeItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.md, paddingVertical: 10 },
   themeDot: { width: 22, height: 22, borderRadius: 11 },
   check: { fontFamily: FONTS.bold, fontSize: 15 },
+  version: {
+    fontFamily: FONTS.regular,
+    fontSize: 11,
+    textAlign: 'center',
+    paddingBottom: SPACING.sm,
+    opacity: 0.5,
+  },
 });
 
 const wide = StyleSheet.create({
@@ -258,8 +268,9 @@ const wide = StyleSheet.create({
     gap: SPACING.sm,
     zIndex: 50,
   },
-  logoBtn: { marginRight: SPACING.sm },
+  logoBtn: { marginRight: SPACING.sm, alignItems: 'flex-start' },
   logoTxt: { fontFamily: FONTS.extraBold, fontSize: 17 },
+  versionTxt: { fontFamily: FONTS.regular, fontSize: 10, opacity: 0.6, marginTop: 1 },
   grades: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 2 },
   gradeBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.sm },
   gradeTxt: { fontFamily: FONTS.bold, fontSize: 13 },
