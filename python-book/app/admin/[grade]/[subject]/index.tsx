@@ -27,7 +27,7 @@ export default function AdminLessonList() {
         </Text>
         <Pressable
           style={[s.addBtn, { backgroundColor: '#4F46E5' }]}
-          onPress={() => router.push(`/admin/${grade}/${subject}/new` as any)}
+          onPress={() => router.push(`/admin/${grade}/${subject}/new/edit` as any)}
         >
           <Text style={s.addBtnText}>+ Урок</Text>
         </Pressable>

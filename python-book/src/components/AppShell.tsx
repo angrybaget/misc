@@ -10,8 +10,10 @@ import { COLOR_SCHEMES } from '../data/themes';
 import { useThemeStore } from '../store/theme';
 import { useAdminStore } from '../store/admin';
 import { useColors } from '../hooks/useColors';
+import Constants from 'expo-constants';
 import { FONTS, RADIUS, SPACING } from '../theme';
-import { APP_VERSION } from '../version';
+
+const APP_VERSION = `v${Constants.expoConfig?.version ?? '?'}`;
 
 const DRAWER_W = 264;
 const HEADER_H = 52;

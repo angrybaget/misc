@@ -129,22 +129,10 @@ echo "▶ Running tests..."
 npm test
 echo "  Tests passed ✓"
 
-# ── 2. Bump version + Build ───────────────────────────────────────────────────
+# ── 2. Build ─────────────────────────────────────────────────────────────────
 if [[ "$BUILD_MODE" != "--no-build" ]]; then
-  echo "▶ Bumping version..."
-  DEPLOY_VERSION=$(node -e "
-const fs = require('fs');
-const file = 'src/version.ts';
-const src = fs.readFileSync(file, 'utf8');
-const m = src.match(/v(\d+)\.(\d+)/);
-if (!m) { process.stderr.write('Version not found in ' + file + '\n'); process.exit(1); }
-const next = 'v' + m[1] + '.' + (parseInt(m[2]) + 1);
-fs.writeFileSync(file, src.replace(/v\d+\.\d+/, next));
-process.stdout.write(next);
-")
-  echo "  version: ${DEPLOY_VERSION}"
-
-  echo "▶ Building..."
+  DEPLOY_VERSION=$(node -e "process.stdout.write(require('./package.json').version)")
+  echo "▶ Building... (${DEPLOY_VERSION})"
   npx expo export --platform web
 fi
 
