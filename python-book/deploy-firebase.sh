@@ -123,13 +123,18 @@ if [[ -z "$SA_KEY" ]]; then
 fi
 echo "  key: $SA_KEY"
 
-# ── 1. Build ─────────────────────────────────────────────────────────────────
+# ── 1. Tests ─────────────────────────────────────────────────────────────────
+echo "▶ Running tests..."
+npm test
+echo "  Tests passed ✓"
+
+# ── 2. Build ─────────────────────────────────────────────────────────────────
 if [[ "$BUILD_MODE" != "--no-build" ]]; then
   echo "▶ Building..."
   npx expo export --platform web
 fi
 
-# ── 2. Get OAuth token ────────────────────────────────────────────────────────
+# ── 3. Get OAuth token ────────────────────────────────────────────────────────
 echo "▶ Generating OAuth token..."
 TOKEN=$(node - <<NODEJS
 const fs = require('fs');
