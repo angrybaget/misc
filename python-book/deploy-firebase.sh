@@ -133,11 +133,6 @@ echo "  Tests passed ✓"
 if [[ "$BUILD_MODE" != "--no-build" ]]; then
   DEPLOY_VERSION=$(node -e "process.stdout.write(require('./package.json').version)")
   echo "▶ Building... (${DEPLOY_VERSION})"
-  # Inject Resend key from secrets (safe: domain-restricted key for welcome emails)
-  if [[ -f "$HOME/.config/secrets/resend_api_key.txt" ]]; then
-    export EXPO_PUBLIC_RESEND_API_KEY
-    EXPO_PUBLIC_RESEND_API_KEY=$(tr -d '[:space:]' < "$HOME/.config/secrets/resend_api_key.txt")
-  fi
   npx expo export --platform web
 fi
 
