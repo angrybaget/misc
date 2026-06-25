@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { GRADES } from '../src/data/grades';
 import { useProgress } from '../src/store/progress';
 import { useColors } from '../src/hooks/useColors';
+import { useSounds } from '../src/hooks/useSounds';
 import { FONTS, RADIUS, SPACING } from '../src/theme';
 
 export default function HomeScreen() {
@@ -13,6 +14,7 @@ export default function HomeScreen() {
   const { totalDone } = useProgress();
   const done = totalDone();
   const C = useColors();
+  const { playTap } = useSounds();
   const { width } = useWindowDimensions();
   const CARD_W = (width - SPACING.md * 2 - 12) / 2;
 
@@ -47,7 +49,7 @@ export default function HomeScreen() {
             >
               <Pressable
                 style={({ pressed }) => [s.card, { borderColor: C.border }, pressed && { opacity: 0.85 }]}
-                onPress={() => router.push(`/grade/${grade.id}` as any)}
+                onPress={() => { playTap(); router.push(`/grade/${grade.id}` as any); }}
               >
                 <LinearGradient
                   colors={[grade.color + 'cc', grade.color + '44', 'transparent']}

@@ -7,6 +7,7 @@ import { SUBJECTS } from '../../../src/data/subjects';
 import { useSubjectContent } from '../../../src/hooks/useSubjectContent';
 import { useProgress } from '../../../src/store/progress';
 import { useColors } from '../../../src/hooks/useColors';
+import { useSounds } from '../../../src/hooks/useSounds';
 import { GradeId, SubjectId } from '../../../src/data/types';
 import { FONTS, RADIUS, SPACING } from '../../../src/theme';
 
@@ -14,6 +15,7 @@ export default function SubjectScreen() {
   const { grade, subject } = useLocalSearchParams<{ grade: string; subject: string }>();
   const router = useRouter();
   const C = useColors();
+  const { playSelect } = useSounds();
   const gradeId = Number(grade) as GradeId;
   const subjectId = subject as SubjectId;
 
@@ -68,7 +70,7 @@ export default function SubjectScreen() {
               <Animated.View key={lesson.id} entering={FadeInDown.delay(i * 60).springify()}>
                 <Pressable
                   style={({ pressed }) => [s.card, { backgroundColor: C.surface, borderColor: C.border }, pressed && { opacity: 0.85 }]}
-                  onPress={() => router.push(`/grade/${gradeId}/${subjectId}/${lesson.id}` as any)}
+                  onPress={() => { playSelect(); router.push(`/grade/${gradeId}/${subjectId}/${lesson.id}` as any); }}
                 >
                   <View style={[s.lessonNum, { borderColor: C.border, backgroundColor: 'rgba(0,0,0,0.03)' },
                     lessonDone && { backgroundColor: subjectDef.color + '28', borderColor: subjectDef.color }]}>

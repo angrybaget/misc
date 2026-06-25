@@ -8,6 +8,7 @@ import { SUBJECTS } from '../../src/data/subjects';
 import { getContent } from '../../src/data/curriculum';
 import { useProgress } from '../../src/store/progress';
 import { useColors } from '../../src/hooks/useColors';
+import { useSounds } from '../../src/hooks/useSounds';
 import { GradeId, SubjectId } from '../../src/data/types';
 import { FONTS, RADIUS, SPACING } from '../../src/theme';
 
@@ -15,6 +16,7 @@ export default function GradeScreen() {
   const { grade } = useLocalSearchParams<{ grade: string }>();
   const router = useRouter();
   const C = useColors();
+  const { playSelect } = useSounds();
   const gradeId = Number(grade) as GradeId;
   const gradeDef = GRADES.find((g) => g.id === gradeId);
   const { countDone } = useProgress();
@@ -55,7 +57,7 @@ export default function GradeScreen() {
               <Animated.View key={subjectId} entering={FadeInDown.delay(i * 100).springify()}>
                 <Pressable
                   style={({ pressed }) => [s.card, { backgroundColor: C.surface, borderColor: C.border }, pressed && { opacity: 0.85 }]}
-                  onPress={() => router.push(`/grade/${gradeId}/${subjectId}` as any)}
+                  onPress={() => { playSelect(); router.push(`/grade/${gradeId}/${subjectId}` as any); }}
                 >
                   <View style={[s.cardAccent, { backgroundColor: subject.color }]} />
                   <View style={s.cardBody}>

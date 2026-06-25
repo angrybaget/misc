@@ -17,6 +17,7 @@ import { ContentRenderer } from '../../../../src/components/ContentRenderer';
 import { TeacherAccordion } from '../../../../src/components/TeacherAccordion';
 import { CodePlayground } from '../../../../src/components/CodePlayground';
 import { useColors } from '../../../../src/hooks/useColors';
+import { useSounds } from '../../../../src/hooks/useSounds';
 import { GradeId, SubjectId } from '../../../../src/data/types';
 import { FONTS, RADIUS, SPACING } from '../../../../src/theme';
 
@@ -40,6 +41,7 @@ export default function LessonScreen() {
 
   const { markDone, isDone } = useProgress();
   const { user } = useAdminStore();
+  const { playComplete } = useSounds();
   const isAdmin = !!user;
   const [celebrated, setCelebrated] = useState(false);
 
@@ -49,13 +51,14 @@ export default function LessonScreen() {
   const celebrate = useCallback(() => {
     if (celebrated) return;
     setCelebrated(true);
+    playComplete();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     celebrateScale.value = withSequence(
       withSpring(1.15, { damping: 5 }),
       withSpring(0.95, { damping: 8 }),
       withSpring(1, { damping: 12 }),
     );
-  }, [celebrated]);
+  }, [celebrated, playComplete]);
 
   useShake(celebrate);
 

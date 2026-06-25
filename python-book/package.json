@@ -1,12 +1,13 @@
 {
   "name": "python-book",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "main": "expo-router/entry",
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.4.2",
     "@expo/metro-runtime": "^56.0.15",
     "babel-preset-expo": "^56.0.15",
     "expo": "~56.0.12",
+    "expo-av": "^16.0.8",
     "expo-blur": "^56.0.3",
     "expo-constants": "^56.0.18",
     "expo-dev-client": "~56.0.20",

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
 import { useColors } from '../hooks/useColors';
+import { useSounds } from '../hooks/useSounds';
 import { FONTS, RADIUS, SPACING } from '../theme';
 
 interface Props {
@@ -15,6 +16,7 @@ export function FillInBlock({ problem, hint, answer }: Props) {
   const [checked, setChecked] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const C = useColors();
+  const { playCorrect, playWrong } = useSounds();
 
   const isCorrect = checked && value.trim().toLowerCase() === answer.trim().toLowerCase();
   const isWrong = checked && !isCorrect;
@@ -25,7 +27,10 @@ export function FillInBlock({ problem, hint, answer }: Props) {
   function handleCheck() {
     if (!value.trim()) return;
     setChecked(true);
-    if (value.trim().toLowerCase() !== answer.trim().toLowerCase()) {
+    if (value.trim().toLowerCase() === answer.trim().toLowerCase()) {
+      playCorrect();
+    } else {
+      playWrong();
       shake.value = withSequence(
         withSpring(8), withSpring(-8), withSpring(6),
         withSpring(-6), withSpring(0),

@@ -4,6 +4,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withSequence, FadeIn,
 } from 'react-native-reanimated';
 import { useColors } from '../hooks/useColors';
+import { useSounds } from '../hooks/useSounds';
 import { FONTS, RADIUS, SPACING } from '../theme';
 
 interface Props {
@@ -18,6 +19,7 @@ const LABELS = ['A', 'B', 'C', 'D'];
 export function QuizBlock({ question, options, correct, explanation }: Props) {
   const [selected, setSelected] = useState<number | null>(null);
   const C = useColors();
+  const { playCorrect, playWrong } = useSounds();
   const isAnswered = selected !== null;
 
   function optionBg(i: number) {
@@ -62,6 +64,7 @@ export function QuizBlock({ question, options, correct, explanation }: Props) {
                 onPress={() => {
                   if (isAnswered) return;
                   scale.value = withSequence(withSpring(0.95), withSpring(1));
+                  if (i === correct) playCorrect(); else playWrong();
                   setSelected(i);
                 }}
               >
