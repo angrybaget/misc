@@ -14,11 +14,16 @@ export default function AdminDashboard() {
   const router = useRouter();
   const C = useColors();
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace('/' as any);
+  };
+
   return (
     <View style={[s.bg, { backgroundColor: C.bg }]}>
       <View style={[s.header, { borderBottomColor: C.border }]}>
         <Text style={[s.title, { color: C.text }]}>Адмін-панель</Text>
-        <Pressable onPress={signOut}>
+        <Pressable onPress={handleSignOut}>
           <Text style={[s.logout, { color: C.textMuted }]}>Вийти</Text>
         </Pressable>
       </View>
