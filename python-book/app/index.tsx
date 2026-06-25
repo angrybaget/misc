@@ -1,138 +1,199 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, useWindowDimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View, Text, Pressable, TextInput, StyleSheet,
+  useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { GRADES } from '../src/data/grades';
-import { useProgress } from '../src/store/progress';
+import { useAdminStore } from '../src/store/admin';
+import { useUserStore } from '../src/store/user';
 import { useColors } from '../src/hooks/useColors';
 import { FONTS, RADIUS, SPACING } from '../src/theme';
 
-export default function HomeScreen() {
+const EMAIL_ERRORS: Record<string, string> = {
+  'auth/user-not-found':      'Акаунт не знайдено',
+  'auth/wrong-password':      'Невірний пароль',
+  'auth/invalid-email':       'Невірний формат email',
+  'auth/invalid-credential':  'Невірний email або пароль',
+  'auth/too-many-requests':   'Забагато спроб — спробуй пізніше',
+};
+
+export default function AuthGate() {
+  const { user: adminUser, loading: adminLoading } = useAdminStore();
+  const { user: studentUser, loading: userLoading, signInWithGoogle, signInWithEmail } = useUserStore();
   const router = useRouter();
-  const { totalDone } = useProgress();
-  const done = totalDone();
   const C = useColors();
   const { width } = useWindowDimensions();
-  const CARD_W = (width - SPACING.md * 2 - 12) / 2;
+
+  const [email, setEmail]       = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError]       = useState('');
+  const [busy, setBusy]         = useState(false);
+
+  const loading = adminLoading || userLoading;
+
+  useEffect(() => {
+    if (loading) return;
+    if (adminUser)  { router.replace('/admin/dashboard' as any); return; }
+    if (studentUser){ router.replace('/home' as any); return; }
+  }, [adminUser, studentUser, loading]);
+
+  if (loading || adminUser || studentUser) return null;
+
+  const narrow = width < 500;
+
+  const handleEmailLogin = async () => {
+    if (!email || !password) return;
+    setError('');
+    setBusy(true);
+    try {
+      await signInWithEmail(email.trim(), password);
+    } catch (e: any) {
+      setError(EMAIL_ERRORS[e?.code] ?? 'Помилка входу');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
-    <View style={[s.bg, { backgroundColor: C.bg }]}>
-      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <Animated.View entering={FadeIn.duration(600)}>
-          <LinearGradient
-            colors={[C.accent, C.accent + 'bb', C.bg]}
-            style={s.header}
-          >
-            <Text style={s.flagRow}>🇺🇦</Text>
-            <Text style={[s.title, { color: '#fff' }]}>Навчайся{'\n'}разом з нами</Text>
-            <Text style={s.subtitle}>НУШ · 5–9 клас · 2025–2026</Text>
-            {done > 0 && (
-              <View style={[s.badge, { backgroundColor: C.green + '33', borderColor: C.green + '66' }]}>
-                <Text style={[s.badgeText, { color: C.green }]}>✓ {done} уроків завершено</Text>
-              </View>
-            )}
-          </LinearGradient>
-        </Animated.View>
+    <LinearGradient colors={[C.accent + 'ee', C.accent + '88', C.bg]} style={s.fill}>
+      <KeyboardAvoidingView
+        style={s.fill}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={[s.scroll, narrow && s.scrollNarrow]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Branding */}
+          <Animated.View entering={FadeInDown.duration(400).springify()} style={s.header}>
+            <Text style={s.flag}>🇺🇦</Text>
+            <Text style={[s.title, { color: C.text }]}>НУШ Навчання</Text>
+            <Text style={[s.sub, { color: C.textMuted }]}>5–9 клас · 2025–2026</Text>
+          </Animated.View>
 
-        {/* Grade cards */}
-        <Text style={[s.sectionTitle, { color: C.text }]}>Обери клас</Text>
-        <View style={s.grid}>
-          {GRADES.map((grade, i) => (
-            <Animated.View
-              key={grade.id}
-              entering={FadeInDown.delay(i * 80).springify()}
-              style={{ width: CARD_W }}
+          <Animated.View entering={FadeInDown.delay(100).duration(400).springify()} style={s.card}>
+            {/* Google */}
+            <Pressable
+              style={({ pressed }) => [s.googleBtn, pressed && { opacity: 0.8 }]}
+              onPress={signInWithGoogle}
             >
-              <Pressable
-                style={({ pressed }) => [s.card, { borderColor: C.border }, pressed && { opacity: 0.85 }]}
-                onPress={() => router.push(`/grade/${grade.id}` as any)}
-              >
-                <LinearGradient
-                  colors={[grade.color + 'cc', grade.color + '44', 'transparent']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={s.cardGrad}
-                >
-                  <Text style={s.cardEmoji}>{grade.emoji}</Text>
-                  <Text style={[s.cardLabel, { color: C.text }]}>{grade.label}</Text>
-                  <Text style={s.cardSubs}>
-                    {grade.subjects.length} предмет{grade.subjects.length > 1 ? 'и' : ''}
-                  </Text>
-                </LinearGradient>
-              </Pressable>
-            </Animated.View>
-          ))}
-        </View>
-      </ScrollView>
-    </View>
+              <Text style={s.googleIcon}>G</Text>
+              <Text style={s.googleTxt}>Увійти через Google</Text>
+            </Pressable>
+
+            {/* Divider */}
+            <View style={s.divider}>
+              <View style={[s.dividerLine, { backgroundColor: C.border }]} />
+              <Text style={[s.dividerTxt, { color: C.textMuted }]}>або</Text>
+              <View style={[s.dividerLine, { backgroundColor: C.border }]} />
+            </View>
+
+            {/* Email form */}
+            <TextInput
+              style={[s.input, { backgroundColor: C.surface, borderColor: C.border, color: C.text }]}
+              placeholder="Email"
+              placeholderTextColor={C.textMuted}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
+            />
+            <TextInput
+              style={[s.input, { backgroundColor: C.surface, borderColor: C.border, color: C.text }]}
+              placeholder="Пароль"
+              placeholderTextColor={C.textMuted}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete="password"
+            />
+
+            {!!error && <Text style={s.error}>{error}</Text>}
+
+            <Pressable
+              style={({ pressed }) => [
+                s.emailBtn,
+                { backgroundColor: C.accent, opacity: pressed || busy ? 0.75 : 1 },
+              ]}
+              onPress={handleEmailLogin}
+              disabled={busy}
+            >
+              <Text style={s.emailBtnTxt}>{busy ? 'Входжу…' : 'Увійти'}</Text>
+            </Pressable>
+
+            <Text style={[s.hint, { color: C.textMuted }]}>
+              Пароль надіслано на email після першої реєстрації через Google
+            </Text>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
 const s = StyleSheet.create({
-  bg: { flex: 1 },
-  scroll: { paddingBottom: SPACING.xxl },
-  header: {
-    paddingTop: 72,
-    paddingBottom: SPACING.xl,
-    paddingHorizontal: SPACING.md,
+  fill: { flex: 1 },
+  scroll: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SPACING.lg,
+    paddingBottom: SPACING.xxl,
+  },
+  scrollNarrow: { paddingHorizontal: SPACING.md },
+  header: { alignItems: 'center', gap: SPACING.sm, marginBottom: SPACING.xl },
+  flag:  { fontSize: 64 },
+  title: { fontFamily: FONTS.extraBold, fontSize: 32, textAlign: 'center' },
+  sub: {
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+  card: { width: '100%', maxWidth: 420, gap: SPACING.md },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    backgroundColor: '#fff',
+    borderRadius: RADIUS.lg,
+    paddingVertical: 14,
+    paddingHorizontal: SPACING.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  googleIcon: { fontFamily: FONTS.extraBold, fontSize: 18, color: '#4285F4' },
+  googleTxt:  { fontFamily: FONTS.bold, fontSize: 16, color: '#1f2937' },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  dividerLine: { flex: 1, height: 1 },
+  dividerTxt: { fontFamily: FONTS.regular, fontSize: 13 },
+  input: {
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    fontFamily: FONTS.regular,
+    fontSize: 15,
+  },
+  error: { color: '#ef4444', fontFamily: FONTS.regular, fontSize: 13 },
+  emailBtn: {
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
     alignItems: 'center',
   },
-  flagRow: { fontSize: 40, marginBottom: SPACING.sm },
-  title: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 34,
-    textAlign: 'center',
-    lineHeight: 42,
-  },
-  subtitle: {
-    fontFamily: FONTS.regular,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: 8,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  badge: {
-    marginTop: SPACING.md,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  badgeText: { fontFamily: FONTS.bold, fontSize: 13 },
-  sectionTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: 13,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.xl,
-    paddingBottom: SPACING.md,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: SPACING.md,
-    gap: 12,
-  },
-  card: {
-    borderRadius: RADIUS.lg,
-    overflow: 'hidden',
-    borderWidth: 1,
-  },
-  cardGrad: {
-    padding: SPACING.md,
-    minHeight: 130,
-    justifyContent: 'flex-end',
-  },
-  cardEmoji: { fontSize: 40, marginBottom: SPACING.sm },
-  cardLabel: { fontFamily: FONTS.extraBold, fontSize: 22 },
-  cardSubs: {
+  emailBtnTxt: { color: '#fff', fontFamily: FONTS.bold, fontSize: 16 },
+  hint: {
     fontFamily: FONTS.regular,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
-    marginTop: 2,
+    textAlign: 'center',
+    opacity: 0.7,
   },
 });
