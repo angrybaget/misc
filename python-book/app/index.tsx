@@ -126,7 +126,7 @@ export default function AuthGate() {
             </Pressable>
 
             <Text style={[s.hint, { color: C.textMuted }]}>
-              Пароль надіслано на email після першої реєстрації через Google
+              Вперше? Після входу через Google перевір пошту — там буде посилання для встановлення пароля
             </Text>
           </Animated.View>
         </ScrollView>

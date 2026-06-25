@@ -21,7 +21,11 @@ export function SplashOverlay() {
 
 const s = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.4)',
     zIndex: 9999,
     alignItems: 'center',
@@ -31,11 +35,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  flag: { fontSize: 52, marginBottom: 8 },
-  title: {
-    color: '#fff',
-    fontFamily: FONTS.extraBold,
-    fontSize: 24,
-    letterSpacing: 0.5,
-  },
+  flag:  { fontSize: 52, marginBottom: 8 },
+  title: { color: '#fff', fontFamily: FONTS.extraBold, fontSize: 24, letterSpacing: 0.5 },
 });
